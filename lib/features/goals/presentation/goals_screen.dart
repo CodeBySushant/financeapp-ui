@@ -19,6 +19,7 @@ class GoalsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -34,13 +35,13 @@ class GoalsScreen extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Glass.white(0.07),
-                  border: Border.all(color: Glass.white(0.14)),
+                  color: g.strokeSoft,
+                  border: Border.all(color: g.stroke),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.add_rounded,
                   size: 20,
-                  color: Glass.textPrimary,
+                  color: g.text,
                 ),
               ),
             ),
@@ -86,11 +87,11 @@ class _GoalTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final remaining = goal.target - goal.saved;
 
     return GlassPanel(
-      tint: Glass.mint,
-      stroke: 0.18,
+      tint: g.success,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -98,15 +99,15 @@ class _GoalTile extends StatelessWidget {
             children: [
               GlassRing(
                 fraction: goal.fraction,
-                tone: Glass.mint,
+                tone: g.success,
                 size: 64,
                 stroke: 7,
                 child: Text(
                   '${goal.percent}%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
               ),
@@ -117,11 +118,11 @@ class _GoalTile extends StatelessWidget {
                   children: [
                     Text(
                       goal.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                         letterSpacing: -0.3,
-                        color: Glass.textPrimary,
+                        color: g.text,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -129,15 +130,15 @@ class _GoalTile extends StatelessWidget {
                       goal.saved.format(),
                       style: context.text.moneyMd.copyWith(
                         fontSize: 19,
-                        color: Glass.textPrimary,
+                        color: g.text,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'of ${goal.target.format()}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
-                        color: Glass.textMuted,
+                        color: g.textMuted,
                       ),
                     ),
                   ],
@@ -187,20 +188,21 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 11.5, color: Glass.textMuted),
+          style: TextStyle(fontSize: 11.5, color: g.textMuted),
         ),
         const SizedBox(height: 3),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Glass.textPrimary,
+            color: g.text,
           ),
         ),
       ],

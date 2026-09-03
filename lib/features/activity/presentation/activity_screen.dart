@@ -42,6 +42,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final items = _visible;
     final groups = <String, List<PreviewTx>>{};
     for (final t in items) {
@@ -63,16 +64,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
               children: [
                 TextField(
                   onChanged: (v) => setState(() => _query = v),
-                  style: const TextStyle(
-                    color: Glass.textPrimary,
+                  style: TextStyle(
+                    color: g.text,
                     fontSize: 14.5,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Search merchant or category',
                     prefixIcon: Icon(
                       Icons.search_rounded,
                       size: 20,
-                      color: Glass.textMuted,
+                      color: g.textMuted,
                     ),
                   ),
                 ),
@@ -85,7 +86,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         child: GlassChip(
                           label: _filters[i],
                           selected: i == _filter,
-                          tone: Glass.cyan,
+                          tone: g.accentAlt,
                           onTap: () => setState(() => _filter = i),
                         ),
                       ),
@@ -136,18 +137,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       children: [
                         Text(
                           entry.key,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: Glass.textMuted,
+                            color: g.textMuted,
                           ),
                         ),
                         const Spacer(),
                         Text(
                           _dayTotal(entry.value),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12.5,
-                            color: Glass.textMuted,
+                            color: g.textMuted,
                           ),
                         ),
                       ],
@@ -164,7 +165,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                             Divider(
                               height: 1,
                               indent: 70,
-                              color: Glass.white(0.07),
+                              color: g.strokeSoft,
                             ),
                           _TxRow(tx: entry.value[i]),
                         ],
@@ -213,7 +214,8 @@ class _TxRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = tx.isIncome ? Glass.success : Glass.textPrimary;
+    final g = context.glass;
+    final tone = tx.isIncome ? g.success : g.text;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -232,10 +234,10 @@ class _TxRow extends StatelessWidget {
                   tx.merchant,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -245,9 +247,9 @@ class _TxRow extends StatelessWidget {
                       : '${tx.categoryLabel} · ${tx.note}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
-                    color: Glass.textMuted,
+                    color: g.textMuted,
                   ),
                 ),
               ],

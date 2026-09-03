@@ -6,47 +6,51 @@ import 'app_tokens.dart';
 import 'app_typography.dart';
 import 'glass.dart';
 
-/// The app theme.
+/// Builds the light and dark themes from a [GlassPalette].
 ///
-/// Fintrak is dark-only by design. Glass needs a rich backdrop to refract; a
-/// light theme would flatten every frosted surface into a grey rectangle, so
-/// there is no light variant rather than a bad one.
+/// Both share every dimension, weight and radius; only colour differs. That is
+/// deliberate — a theme switch that also moves things around reads as two
+/// different apps rather than one app with a setting.
 abstract final class AppTheme {
-  static ThemeData glass() {
-    final text = AppText.resolve(Glass.textPrimary, Glass.textMuted);
-    final textTheme =
-        AppText.uiTextTheme(Glass.textPrimary, Glass.textMuted).apply(
-      bodyColor: Glass.textPrimary,
-      displayColor: Glass.textPrimary,
+  static ThemeData light() => _build(GlassPalette.light);
+  static ThemeData dark() => _build(GlassPalette.dark);
+
+  static ThemeData _build(GlassPalette g) {
+    final text = AppText.resolve(g.text, g.textMuted);
+    final textTheme = AppText.uiTextTheme(g.text, g.textMuted).apply(
+      bodyColor: g.text,
+      displayColor: g.text,
     );
 
-    final scheme = const ColorScheme.dark().copyWith(
-      primary: Glass.violet,
-      onPrimary: Colors.white,
-      secondary: Glass.cyan,
-      onSecondary: Glass.canvasDeep,
-      surface: Glass.canvas,
-      onSurface: Glass.textPrimary,
-      error: Glass.danger,
-      onError: Glass.canvasDeep,
-      outline: Glass.white(0.14),
+    final scheme =
+        (g.isDark ? const ColorScheme.dark() : const ColorScheme.light())
+            .copyWith(
+      primary: g.accent,
+      onPrimary: g.onAccent,
+      secondary: g.accentAlt,
+      onSecondary: g.onAccent,
+      surface: g.canvasBottom,
+      onSurface: g.text,
+      error: g.danger,
+      onError: g.onAccent,
+      outline: g.stroke,
     );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: g.isDark ? Brightness.dark : Brightness.light,
       colorScheme: scheme,
       textTheme: textTheme,
-      extensions: <ThemeExtension<dynamic>>[text],
+      extensions: <ThemeExtension<dynamic>>[text, g],
 
-      // Transparent everywhere: AuroraBackground paints the canvas once, and
-      // every Scaffold above it must let that show through.
+      // GlassBackground paints the canvas once; every Scaffold above it must
+      // let that show through.
       scaffoldBackgroundColor: Colors.transparent,
       canvasColor: Colors.transparent,
-      splashColor: Glass.white(0.06),
-      highlightColor: Glass.white(0.03),
+      splashColor: g.accent.withValues(alpha: 0.10),
+      highlightColor: g.accent.withValues(alpha: 0.05),
       dividerTheme: DividerThemeData(
-        color: Glass.white(0.09),
+        color: g.strokeSoft,
         thickness: 1,
         space: 1,
       ),
@@ -57,18 +61,18 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: Glass.textPrimary,
-        ),
-        iconTheme: const IconThemeData(color: Glass.textPrimary),
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        titleTextStyle: textTheme.titleMedium,
+        iconTheme: IconThemeData(color: g.text),
+        systemOverlayStyle:
+            g.isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: Glass.violet,
-          foregroundColor: Colors.white,
+          backgroundColor: g.accent,
+          foregroundColor: g.onAccent,
+          disabledBackgroundColor: g.accent.withValues(alpha: 0.28),
+          disabledForegroundColor: g.onAccent.withValues(alpha: 0.65),
           minimumSize: const Size(0, 50),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
           textStyle: const TextStyle(
@@ -84,9 +88,9 @@ abstract final class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: Glass.textPrimary,
+          foregroundColor: g.text,
           minimumSize: const Size(0, 50),
-          side: BorderSide(color: Glass.white(0.18)),
+          side: BorderSide(color: g.stroke),
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
           ),
@@ -94,23 +98,23 @@ abstract final class AppTheme {
       ),
 
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: Glass.cyan),
+        style: TextButton.styleFrom(foregroundColor: g.accentAlt),
       ),
 
-      iconTheme: const IconThemeData(color: Glass.textSecondary, size: 22),
+      iconTheme: IconThemeData(color: g.textSecondary, size: 22),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Glass.white(0.06),
-        hintStyle: const TextStyle(color: Glass.textMuted, fontSize: 14.5),
+        fillColor: g.surfaceLow,
+        hintStyle: TextStyle(color: g.textMuted, fontSize: 14.5),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.lg,
         ),
-        border: _field(Glass.white(0.12)),
-        enabledBorder: _field(Glass.white(0.12)),
-        focusedBorder: _field(Glass.cyan.withValues(alpha: 0.65)),
-        errorBorder: _field(Glass.danger.withValues(alpha: 0.65)),
+        border: _field(g.stroke),
+        enabledBorder: _field(g.stroke),
+        focusedBorder: _field(g.accent.withValues(alpha: 0.7)),
+        errorBorder: _field(g.danger.withValues(alpha: 0.7)),
       ),
 
       bottomSheetTheme: const BottomSheetThemeData(
@@ -122,14 +126,14 @@ abstract final class AppTheme {
 
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF161C2E),
-        contentTextStyle: const TextStyle(
-          color: Glass.textPrimary,
+        backgroundColor: g.isDark ? const Color(0xFF161C2E) : g.text,
+        contentTextStyle: TextStyle(
+          color: g.isDark ? g.text : Colors.white,
           fontSize: 14,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: Glass.white(0.14)),
+          side: BorderSide(color: g.stroke),
         ),
       ),
 

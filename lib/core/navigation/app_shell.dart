@@ -50,12 +50,8 @@ const shellDestinations = <ShellDestination>[
 
 /// Wraps the five top-level sections.
 ///
-/// The add action is a free-floating button rather than a slot inside the bar.
-/// The previous build reserved a centre slot by inserting a disabled
-/// destination, which made the bar emit indices 0..5 against a five-item list —
-/// tapping the last tab threw a RangeError, and the middle tabs were silently
-/// off by one. Keeping the action outside the bar means the emitted index is
-/// always a real destination index.
+/// The add action is a separate widget rather than a sixth entry in
+/// [shellDestinations], so it can never emit an index into that list.
 class AppShell extends StatelessWidget {
   const AppShell({
     super.key,
@@ -80,7 +76,7 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final wide = context.windowSize.isAtLeastMedium;
 
-    return AuroraBackground(
+    return GlassBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: true,
@@ -117,7 +113,58 @@ class _FloatingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final radius = BorderRadius.circular(26);
+
+    Widget bar = ClipRRect(
+      borderRadius: radius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+        child: Container(
+          height: 66,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            color: g.isDark
+                ? Colors.white.withValues(alpha: 0.09)
+                : Colors.white.withValues(alpha: 0.82),
+            border: Border.all(color: g.stroke),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < shellDestinations.length; i++)
+                Expanded(
+                  child: _BarItem(
+                    destination: shellDestinations[i],
+                    selected: i == currentIndex,
+                    onTap: () => onSelect(i),
+                  ),
+                ),
+              // Same width as one destination slot, so the row stays even.
+              Expanded(child: _AddButton(onTap: onAdd)),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!g.isDark) {
+      bar = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0B2A52).withValues(alpha: 0.13),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: bar,
+      );
+    }
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -126,39 +173,7 @@ class _FloatingBar extends StatelessWidget {
         AppSpacing.lg,
         bottomInset > 0 ? bottomInset * 0.5 + AppSpacing.sm : AppSpacing.lg,
       ),
-      // One pill holds everything: five destinations and the add action. The
-      // action is still a separate widget rather than a sixth entry in
-      // shellDestinations, so it can never emit an index into that list.
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-          child: Container(
-            height: 66,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26),
-              color: Glass.white(0.09),
-              border: Border.all(color: Glass.white(0.15)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < shellDestinations.length; i++)
-                  Expanded(
-                    child: _BarItem(
-                      destination: shellDestinations[i],
-                      selected: i == currentIndex,
-                      onTap: () => onSelect(i),
-                    ),
-                  ),
-                // Same width as one destination slot, so the row stays even.
-                Expanded(child: _AddButton(onTap: onAdd)),
-              ],
-            ),
-          ),
-        ),
-      ),
+      child: bar,
     );
   }
 }
@@ -176,7 +191,8 @@ class _BarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = selected ? Glass.textPrimary : Glass.textMuted;
+    final g = context.glass;
+    final tone = selected ? g.accent : g.textMuted;
 
     return Semantics(
       selected: selected,
@@ -196,7 +212,9 @@ class _BarItem extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              color: selected ? Glass.white(0.13) : Colors.transparent,
+              color: selected
+                  ? g.accent.withValues(alpha: g.isDark ? 0.20 : 0.12)
+                  : Colors.transparent,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -214,7 +232,7 @@ class _BarItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 9.5,
                     height: 1.1,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     color: tone,
                   ),
                 ),
@@ -234,6 +252,8 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
+
     return Semantics(
       button: true,
       label: 'Add transaction',
@@ -253,14 +273,14 @@ class _AddButton extends StatelessWidget {
             child: Ink(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Glass.violet, Color(0xFF9C4DF4)],
+                  colors: [g.accent, Color.lerp(g.accent, g.accentAlt, 0.45)!],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Glass.violet.withValues(alpha: 0.45),
+                    color: g.accent.withValues(alpha: 0.42),
                     blurRadius: 14,
                     offset: const Offset(0, 4),
                   ),
@@ -268,8 +288,8 @@ class _AddButton extends StatelessWidget {
               ),
               // No label. A labelled sixth slot would read as another tab; a
               // filled tile with a single glyph reads as an action.
-              child: const Center(
-                child: Icon(Icons.add_rounded, size: 24, color: Colors.white),
+              child: Center(
+                child: Icon(Icons.add_rounded, size: 24, color: g.onAccent),
               ),
             ),
           ),
@@ -294,6 +314,7 @@ class _Rail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final extended = context.windowSize.isExpanded;
 
     return Row(
@@ -303,19 +324,16 @@ class _Rail extends StatelessWidget {
           onDestinationSelected: onSelect,
           extended: extended,
           minExtendedWidth: 188,
-          backgroundColor: Glass.white(0.04),
-          indicatorColor: Glass.white(0.13),
-          selectedIconTheme: const IconThemeData(color: Glass.textPrimary),
-          unselectedIconTheme: const IconThemeData(color: Glass.textMuted),
-          selectedLabelTextStyle: const TextStyle(
-            color: Glass.textPrimary,
-            fontWeight: FontWeight.w600,
+          backgroundColor: g.surfaceLow,
+          indicatorColor: g.accent.withValues(alpha: g.isDark ? 0.20 : 0.12),
+          selectedIconTheme: IconThemeData(color: g.accent),
+          unselectedIconTheme: IconThemeData(color: g.textMuted),
+          selectedLabelTextStyle: TextStyle(
+            color: g.accent,
+            fontWeight: FontWeight.w700,
             fontSize: 12,
           ),
-          unselectedLabelTextStyle: const TextStyle(
-            color: Glass.textMuted,
-            fontSize: 12,
-          ),
+          unselectedLabelTextStyle: TextStyle(color: g.textMuted, fontSize: 12),
           labelType: extended ? null : NavigationRailLabelType.all,
           leading: Padding(
             padding: const EdgeInsets.only(
@@ -343,7 +361,7 @@ class _Rail extends StatelessWidget {
               ),
           ],
         ),
-        VerticalDivider(width: 1, thickness: 1, color: Glass.white(0.09)),
+        VerticalDivider(width: 1, thickness: 1, color: g.strokeSoft),
         Expanded(child: child),
       ],
     );

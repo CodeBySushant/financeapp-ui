@@ -37,12 +37,13 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final s = summary;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
       backgroundColor: const Color(0xFF141B2E),
-      color: Glass.cyan,
+      color: g.accentAlt,
       edgeOffset: 90,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -134,6 +135,7 @@ class _Greeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final top = MediaQuery.viewPaddingOf(context).top;
     final who = name?.trim();
     final known = who != null && who.isNotEmpty;
@@ -153,9 +155,9 @@ class _Greeting extends StatelessWidget {
               children: [
                 Text(
                   known ? _partOfDay : 'Welcome',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Glass.textMuted,
+                    color: g.textMuted,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -165,11 +167,11 @@ class _Greeting extends StatelessWidget {
                   known ? who : 'Set up your profile',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
               ],
@@ -183,14 +185,14 @@ class _Greeting extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: known
-                    ? const LinearGradient(
+                    ? LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Glass.violet, Glass.pink],
+                        colors: [g.accent, g.accentAlt],
                       )
                     : null,
-                color: known ? null : Glass.white(0.07),
-                border: Border.all(color: Glass.white(0.16)),
+                color: known ? null : g.strokeSoft,
+                border: Border.all(color: g.stroke),
               ),
               child: Center(
                 child: known
@@ -202,10 +204,10 @@ class _Greeting extends StatelessWidget {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.person_outline_rounded,
                         size: 20,
-                        color: Glass.textSecondary,
+                        color: g.textSecondary,
                       ),
               ),
             ),
@@ -224,10 +226,14 @@ class _BalanceHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final text = context.text;
     final radius = BorderRadius.circular(28);
 
-    return ClipRRect(
+    // Dark carries a saturated violet wash; light keeps the panel near-white
+    // with only a hint of it, so the hero stays airy against the pale sky
+    // instead of stamping a heavy block onto it.
+    final hero = ClipRRect(
       borderRadius: radius,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -238,27 +244,32 @@ class _BalanceHero extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Glass.violet.withValues(alpha: 0.30),
-                Glass.cyan.withValues(alpha: 0.12),
-              ],
+              colors: g.isDark
+                  ? [
+                      g.accent.withValues(alpha: 0.30),
+                      g.accentAlt.withValues(alpha: 0.12),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.92),
+                      g.accent.withValues(alpha: 0.10),
+                    ],
             ),
-            border: Border.all(color: Glass.white(0.18)),
+            border: Border.all(color: g.stroke),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Available balance',
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: Glass.textSecondary,
+                      color: g.textSecondary,
                     ),
                   ),
                   const Spacer(),
-                  GlassChip(label: summary.periodLabel, tone: Glass.cyan),
+                  GlassChip(label: summary.periodLabel, tone: g.accentAlt),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
@@ -268,7 +279,7 @@ class _BalanceHero extends StatelessWidget {
                 child: Text(
                   summary.availableBalance.format(),
                   style: text.moneyXl.copyWith(
-                    color: Glass.textPrimary,
+                    color: g.text,
                     fontSize: 42,
                     height: 1.05,
                   ),
@@ -284,13 +295,13 @@ class _BalanceHero extends StatelessWidget {
                       icon: Icons.south_west_rounded,
                       label: 'In',
                       amount: summary.monthIncome,
-                      tone: Glass.success,
+                      tone: g.success,
                     ),
                   ),
                   Container(
                     width: 1,
                     height: 34,
-                    color: Glass.white(0.14),
+                    color: g.isDark ? g.stroke : g.strokeSoft,
                     margin: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg,
                     ),
@@ -300,7 +311,7 @@ class _BalanceHero extends StatelessWidget {
                       icon: Icons.north_east_rounded,
                       label: 'Out',
                       amount: summary.monthExpenses,
-                      tone: Glass.danger,
+                      tone: g.danger,
                     ),
                   ),
                 ],
@@ -309,6 +320,18 @@ class _BalanceHero extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (g.isDark) return hero;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(color: g.shadow, blurRadius: 30, offset: const Offset(0, 12)),
+        ],
+      ),
+      child: hero,
     );
   }
 }
@@ -328,6 +351,7 @@ class _Flow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return Row(
       children: [
         Container(
@@ -347,7 +371,7 @@ class _Flow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 11, color: Glass.textMuted),
+                style: TextStyle(fontSize: 11, color: g.textMuted),
               ),
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -355,7 +379,7 @@ class _Flow extends StatelessWidget {
                 child: Text(
                   amount.format(compact: true),
                   style: context.text.moneySm.copyWith(
-                    color: Glass.textPrimary,
+                    color: g.text,
                     fontSize: 15,
                   ),
                 ),
@@ -376,6 +400,7 @@ class _BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final budget = summary.monthlyBudget;
 
     if (budget == null) {
@@ -383,10 +408,10 @@ class _BudgetCard extends StatelessWidget {
         onTap: onTap,
         child: Row(
           children: [
-            const Icon(Icons.pie_chart_outline_rounded,
-                color: Glass.cyan, size: 22),
+            Icon(Icons.pie_chart_outline_rounded,
+                color: g.accentAlt, size: 22),
             const SizedBox(width: AppSpacing.md),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -395,25 +420,25 @@ class _BudgetCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
-                      color: Glass.textPrimary,
+                      color: g.text,
                     ),
                   ),
                   SizedBox(height: 2),
                   Text(
                     'You get a daily safe-spend figure once you do.',
-                    style: TextStyle(fontSize: 12.5, color: Glass.textMuted),
+                    style: TextStyle(fontSize: 12.5, color: g.textMuted),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Glass.textMuted),
+            Icon(Icons.chevron_right_rounded, color: g.textMuted),
           ],
         ),
       );
     }
 
     final fraction = summary.budgetFraction;
-    final tone = Glass.budgetTone(fraction);
+    final tone = g.budgetTone(fraction);
     final daily = summary.safeDailySpend;
 
     return GlassPanel(
@@ -423,9 +448,9 @@ class _BudgetCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'Monthly budget',
-                style: TextStyle(fontSize: 13, color: Glass.textSecondary),
+                style: TextStyle(fontSize: 13, color: g.textSecondary),
               ),
               const Spacer(),
               Text(
@@ -448,9 +473,9 @@ class _BudgetCard extends StatelessWidget {
                   summary.isOverBudget
                       ? 'Over by ${(summary.monthExpenses - budget).format()}'
                       : '${summary.budgetRemaining!.format()} left of ${budget.format()}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
-                    color: Glass.textMuted,
+                    color: g.textMuted,
                   ),
                 ),
               ),
@@ -458,7 +483,7 @@ class _BudgetCard extends StatelessWidget {
                 Text(
                   '${daily.format()}/day',
                   style: context.text.numMeta.copyWith(
-                    color: Glass.textSecondary,
+                    color: g.textSecondary,
                     fontSize: 12.5,
                   ),
                 ),
@@ -485,6 +510,7 @@ class _QuickAdd extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -510,9 +536,9 @@ class _QuickAdd extends StatelessWidget {
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
-                          color: Glass.textSecondary,
+                          color: g.textSecondary,
                         ),
                       ),
                     ],
@@ -534,23 +560,23 @@ class _InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return GlassPanel(
-      tint: Glass.violet,
-      stroke: 0.20,
+      tint: g.accent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome_rounded,
-                  size: 16, color: Glass.textPrimary),
+              Icon(Icons.auto_awesome_rounded,
+                  size: 16, color: g.text),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 'Pattern spotted',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Glass.white(0.85),
+                  color: g.textMuted,
                 ),
               ),
             ],
@@ -558,10 +584,10 @@ class _InsightCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(
             insight.body,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               height: 1.45,
-              color: Glass.textPrimary,
+              color: g.text,
             ),
           ),
           if (insight.figures.isNotEmpty) ...[
@@ -591,6 +617,7 @@ class _CategoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return GlassPanel(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Column(
@@ -600,7 +627,7 @@ class _CategoryList extends StatelessWidget {
               Divider(
                 height: 1,
                 indent: AppSpacing.xxl + AppSpacing.xxxl,
-                color: Glass.white(0.07),
+                color: g.strokeSoft,
               ),
             _CategoryRow(item: categories[i], total: total),
           ],
@@ -618,6 +645,7 @@ class _CategoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final change = item.percentChange;
     final share = total.isZero ? 0.0 : item.total.ratioOf(total);
 
@@ -636,16 +664,16 @@ class _CategoryRow extends StatelessWidget {
               children: [
                 Text(
                   item.label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
                 const SizedBox(height: 5),
                 GlassBar(
                   fraction: share,
-                  tone: Glass.categoryColor(item.categoryId),
+                  tone: g.categoryColor(item.categoryId),
                   height: 4,
                 ),
               ],
@@ -658,7 +686,7 @@ class _CategoryRow extends StatelessWidget {
               Text(
                 item.total.format(),
                 style: context.text.moneySm.copyWith(
-                  color: Glass.textPrimary,
+                  color: g.text,
                   fontSize: 14,
                 ),
               ),
@@ -669,7 +697,7 @@ class _CategoryRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: change > 0 ? Glass.danger : Glass.success,
+                    color: change > 0 ? g.danger : g.success,
                   ),
                 ),
               ],
@@ -688,18 +716,19 @@ class _GoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return GlassPanel(
       child: Row(
         children: [
           GlassRing(
             fraction: goal.fraction,
-            tone: Glass.mint,
+            tone: g.success,
             child: Text(
               '${goal.percent}%',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Glass.textPrimary,
+                color: g.text,
               ),
             ),
           ),
@@ -710,10 +739,10 @@ class _GoalCard extends StatelessWidget {
               children: [
                 Text(
                   goal.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -721,7 +750,7 @@ class _GoalCard extends StatelessWidget {
                   '${goal.saved.format(compact: true)} of ${goal.target.format(compact: true)}',
                   style: context.text.numMeta.copyWith(
                     fontSize: 12.5,
-                    color: Glass.textMuted,
+                    color: g.textMuted,
                   ),
                 ),
               ],

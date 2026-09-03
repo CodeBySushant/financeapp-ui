@@ -18,6 +18,7 @@ class ScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final top = MediaQuery.viewPaddingOf(context).top;
 
     return Padding(
@@ -28,7 +29,6 @@ class ScreenHeader extends StatelessWidget {
         AppSpacing.xl,
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
@@ -36,21 +36,18 @@ class ScreenHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 26,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: -0.6,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 3),
                   Text(
                     subtitle!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Glass.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 13, color: g.textMuted),
                   ),
                 ],
               ],

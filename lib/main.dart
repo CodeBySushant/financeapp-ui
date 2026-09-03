@@ -5,6 +5,7 @@ import 'core/navigation/app_shell.dart';
 import 'core/session/app_user.dart';
 import 'core/session/session_store.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'dev/preview_data.dart';
 import 'features/activity/presentation/activity_screen.dart';
 import 'features/goals/presentation/goals_screen.dart';
@@ -17,19 +18,14 @@ import 'features/transactions/presentation/add_transaction_sheet.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  // Read the stored profile before the first frame so the greeting is correct
-  // on the very first paint rather than flashing a placeholder.
-  await SessionStore.instance.load();
+  // Read the stored profile and theme before the first frame, so neither the
+  // greeting nor the background flashes the wrong value on launch.
+  await Future.wait([
+    SessionStore.instance.load(),
+    ThemeController.instance.load(),
+  ]);
 
   runApp(const FintrakApp());
 }
@@ -39,11 +35,37 @@ class FintrakApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Fintrak',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.glass(),
-      home: const RootShell(),
+    final controller = ThemeController.instance;
+
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Fintrak',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: controller.mode,
+          builder: (context, child) {
+            // Status bar icons have to follow the resolved theme, not the
+            // stored preference — "system" can resolve either way.
+            final dark = Theme.of(context).brightness == Brightness.dark;
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness:
+                    dark ? Brightness.light : Brightness.dark,
+                statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+                systemNavigationBarColor: Colors.transparent,
+                systemNavigationBarIconBrightness:
+                    dark ? Brightness.light : Brightness.dark,
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+          home: const RootShell(),
+        );
+      },
     );
   }
 }
@@ -86,8 +108,7 @@ class _RootShellState extends State<RootShell> {
   }
 
   Future<void> _askForName() async {
-    final existing = _user?.name;
-    final name = await showNameSheet(context, initial: existing);
+    final name = await showNameSheet(context, initial: _user?.name);
     if (name == null || !mounted) return;
     final saved = await SessionStore.instance.save(name);
     if (!mounted) return;

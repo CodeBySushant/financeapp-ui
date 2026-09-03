@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/session/app_user.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/glass.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/screen_header.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -20,6 +21,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return CustomScrollView(
       slivers: [
         const SliverToBoxAdapter(child: ScreenHeader(title: 'Profile')),
@@ -34,7 +36,6 @@ class ProfileScreen extends StatelessWidget {
             children: [
               GlassPanel(
                 blurred: true,
-                fill: 0.09,
                 onTap: onEditName,
                 child: Row(
                   children: [
@@ -45,19 +46,19 @@ class ProfileScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         gradient: user == null
                             ? null
-                            : const LinearGradient(
+                            : LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [Glass.violet, Glass.pink],
+                                colors: [g.accent, g.accentAlt],
                               ),
-                        color: user == null ? Glass.white(0.08) : null,
-                        border: Border.all(color: Glass.white(0.16)),
+                        color: user == null ? g.surfaceLow : null,
+                        border: Border.all(color: g.stroke),
                       ),
                       child: Center(
                         child: user == null
-                            ? const Icon(
+                            ? Icon(
                                 Icons.person_outline_rounded,
-                                color: Glass.textSecondary,
+                                color: g.textSecondary,
                               )
                             : Text(
                                 user!.initial,
@@ -78,11 +79,11 @@ class ProfileScreen extends StatelessWidget {
                             user?.name ?? 'Add your name',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                               letterSpacing: -0.3,
-                              color: Glass.textPrimary,
+                              color: g.text,
                             ),
                           ),
                           const SizedBox(height: 3),
@@ -91,18 +92,18 @@ class ProfileScreen extends StatelessWidget {
                                 'Saved on this device until sign-in exists',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12.5,
-                              color: Glass.textMuted,
+                              color: g.textMuted,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.edit_outlined,
                       size: 18,
-                      color: Glass.textMuted,
+                      color: g.textMuted,
                     ),
                   ],
                 ),
@@ -130,6 +131,9 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.xxl),
+              const SectionHeading(title: 'Appearance'),
+              const _ThemePicker(),
+              const SizedBox(height: AppSpacing.xxl),
               const SectionHeading(title: 'App'),
               _Group(
                 items: [
@@ -154,7 +158,7 @@ class ProfileScreen extends StatelessWidget {
               Center(
                 child: Text(
                   'Fintrak 0.1.0',
-                  style: TextStyle(fontSize: 12, color: Glass.white(0.28)),
+                  style: TextStyle(fontSize: 12, color: g.textMuted),
                 ),
               ),
             ],
@@ -186,13 +190,14 @@ class _Group extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return GlassPanel(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
             if (i > 0)
-              Divider(height: 1, indent: 58, color: Glass.white(0.07)),
+              Divider(height: 1, indent: 58, color: g.strokeSoft),
             _Row(item: items[i]),
           ],
         ],
@@ -208,6 +213,7 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -219,32 +225,143 @@ class _Row extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(item.icon, size: 20, color: Glass.textSecondary),
+              Icon(item.icon, size: 20, color: g.textSecondary),
               const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Text(
                   item.label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14.5,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
               ),
               if (item.value != null)
                 Text(
                   item.value!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13.5,
-                    color: Glass.textMuted,
+                    color: g.textMuted,
                   ),
                 ),
               const SizedBox(width: AppSpacing.sm),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: Glass.textMuted,
+                color: g.textMuted,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Light, dark, or follow the device.
+///
+/// A segmented control rather than a switch: a two-state switch cannot express
+/// "follow the system", and hiding that option behind a long-press is worse
+/// than showing three buttons.
+class _ThemePicker extends StatefulWidget {
+  const _ThemePicker();
+
+  @override
+  State<_ThemePicker> createState() => _ThemePickerState();
+}
+
+class _ThemePickerState extends State<_ThemePicker> {
+  static const _options = <(ThemeMode, String, IconData)>[
+    (ThemeMode.light, 'Light', Icons.light_mode_rounded),
+    (ThemeMode.dark, 'Dark', Icons.dark_mode_rounded),
+    (ThemeMode.system, 'System', Icons.brightness_auto_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final g = context.glass;
+    final controller = ThemeController.instance;
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Row(
+        children: [
+          for (final (mode, label, icon) in _options)
+            Expanded(
+              child: _ThemeOption(
+                label: label,
+                icon: icon,
+                selected: controller.isActive(mode),
+                onTap: () {
+                  controller.set(mode);
+                  setState(() {});
+                },
+                palette: g,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    required this.palette,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  final GlassPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = selected ? palette.accent : palette.textMuted;
+
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: AppMotion.of(context, AppMotion.fast),
+            curve: AppMotion.emphasized,
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: selected
+                  ? palette.accent.withValues(alpha: palette.isDark ? 0.20 : 0.12)
+                  : Colors.transparent,
+              border: Border.all(
+                color: selected
+                    ? palette.accent.withValues(alpha: 0.45)
+                    : Colors.transparent,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(icon, size: 19, color: tone),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: tone,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

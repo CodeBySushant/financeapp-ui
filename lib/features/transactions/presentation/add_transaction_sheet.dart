@@ -78,6 +78,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final bottom = MediaQuery.viewPaddingOf(context).bottom;
 
@@ -102,11 +103,11 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Glass.white(0.16),
+                  g.stroke,
                   const Color(0xFF0B1020).withValues(alpha: 0.86),
                 ],
               ),
-              border: Border.all(color: Glass.white(0.18)),
+              border: Border.all(color: g.stroke),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -118,7 +119,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                     height: 4,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(2),
-                      color: Glass.white(0.28),
+                      color: g.textMuted,
                     ),
                   ),
                 ),
@@ -129,21 +130,21 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: Glass.white(0.07),
-                    border: Border.all(color: Glass.white(0.11)),
+                    color: g.strokeSoft,
+                    border: Border.all(color: g.surfaceLow),
                   ),
                   child: Row(
                     children: [
                       _Toggle(
                         label: 'Spending',
                         selected: _isExpense,
-                        tone: Glass.danger,
+                        tone: g.danger,
                         onTap: () => setState(() => _isExpense = true),
                       ),
                       _Toggle(
                         label: 'Income',
                         selected: !_isExpense,
-                        tone: Glass.success,
+                        tone: g.success,
                         onTap: () => setState(() => _isExpense = false),
                       ),
                     ],
@@ -160,7 +161,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                         '\u20B9',
                         style: context.text.moneyLg.copyWith(
                           fontSize: 30,
-                          color: Glass.textMuted,
+                          color: g.textMuted,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -179,9 +180,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                           ],
                           style: context.text.moneyXl.copyWith(
                             fontSize: 44,
-                            color: Glass.textPrimary,
+                            color: g.text,
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             filled: false,
                             hintText: '0',
                             border: InputBorder.none,
@@ -191,7 +192,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                             isDense: true,
                             hintStyle: TextStyle(
                               fontSize: 44,
-                              color: Glass.textMuted,
+                              color: g.textMuted,
                             ),
                           ),
                         ),
@@ -204,24 +205,24 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                 TextField(
                   controller: _merchant,
                   textCapitalization: TextCapitalization.sentences,
-                  style: const TextStyle(
-                    color: Glass.textPrimary,
+                  style: TextStyle(
+                    color: g.text,
                     fontSize: 14.5,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Where? (optional)',
                     prefixIcon: Icon(
                       Icons.storefront_outlined,
                       size: 19,
-                      color: Glass.textMuted,
+                      color: g.textMuted,
                     ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
-                const Text(
+                Text(
                   'Category',
-                  style: TextStyle(fontSize: 12.5, color: Glass.textMuted),
+                  style: TextStyle(fontSize: 12.5, color: g.textMuted),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
@@ -231,8 +232,8 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                     for (final (id, label) in _categories)
                       GlassChip(
                         label: label,
-                        icon: Glass.categoryIcon(id),
-                        tone: Glass.categoryColor(id),
+                        icon: GlassPalette.categoryIcon(id),
+                        tone: g.categoryColor(id),
                         selected: id == _category,
                         onTap: () => setState(() => _category = id),
                       ),
@@ -271,6 +272,7 @@ class _Toggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -292,7 +294,7 @@ class _Toggle extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: selected ? tone : Glass.textMuted,
+                color: selected ? tone : g.textMuted,
               ),
             ),
           ),

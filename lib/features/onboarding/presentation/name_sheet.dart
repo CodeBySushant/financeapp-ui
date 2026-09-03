@@ -53,6 +53,7 @@ class _NameSheetState extends State<_NameSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final bottom = MediaQuery.viewPaddingOf(context).bottom;
     final editing = widget.initial != null;
@@ -81,11 +82,11 @@ class _NameSheetState extends State<_NameSheet> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Glass.white(0.16),
+                    g.stroke,
                     const Color(0xFF0B1020).withValues(alpha: 0.88),
                   ],
                 ),
-                border: Border.all(color: Glass.white(0.18)),
+                border: Border.all(color: g.stroke),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -93,20 +94,20 @@ class _NameSheetState extends State<_NameSheet> {
                 children: [
                   Text(
                     editing ? 'Change your name' : 'What should we call you?',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.5,
-                      color: Glass.textPrimary,
+                      color: g.text,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  const Text(
+                  Text(
                     'Only used to greet you. It stays on this device.',
                     style: TextStyle(
                       fontSize: 13.5,
                       height: 1.45,
-                      color: Glass.textMuted,
+                      color: g.textMuted,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxl),
@@ -117,17 +118,17 @@ class _NameSheetState extends State<_NameSheet> {
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _submit(),
                     maxLength: 40,
-                    style: const TextStyle(
-                      color: Glass.textPrimary,
+                    style: TextStyle(
+                      color: g.text,
                       fontSize: 16,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Your name',
                       counterText: '',
                       prefixIcon: Icon(
                         Icons.person_outline_rounded,
                         size: 20,
-                        color: Glass.textMuted,
+                        color: g.textMuted,
                       ),
                     ),
                   ),

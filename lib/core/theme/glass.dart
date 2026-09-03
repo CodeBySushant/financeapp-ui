@@ -5,54 +5,138 @@ import 'package:flutter/material.dart';
 
 import 'app_tokens.dart';
 
-/// Glass design tokens.
+/// The glass palette, resolved per brightness.
 ///
-/// Glassmorphism only works when there is something worth seeing *through* the
-/// glass. A white page behind a frosted panel produces a grey rectangle. So the
-/// backdrop here is an aurora field — four wide colour pools on a deep navy —
-/// and every surface above it is translucent.
-abstract final class Glass {
-  // Backdrop
-  static const canvas = Color(0xFF070B18);
-  static const canvasDeep = Color(0xFF03050D);
+/// Light and dark glass are not the same effect with different numbers. Dark
+/// glass separates a panel from its backdrop with a bright hairline; on a pale
+/// backdrop that hairline is invisible, so light glass separates with a soft
+/// shadow instead and pushes the panel fill close to opaque white. Both are
+/// encoded here so no widget has to know which theme it is in.
+@immutable
+class GlassPalette extends ThemeExtension<GlassPalette> {
+  const GlassPalette({
+    required this.isDark,
+    required this.canvasTop,
+    required this.canvasBottom,
+    required this.text,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.accent,
+    required this.accentAlt,
+    required this.success,
+    required this.warning,
+    required this.danger,
+    required this.surfaceHigh,
+    required this.surfaceLow,
+    required this.stroke,
+    required this.strokeSoft,
+    required this.shadow,
+    required this.onAccent,
+  });
 
-  // Aurora pools. Four hues rather than one accent: a single bright accent on
-  // near-black is the most over-used dark-app look there is.
-  static const violet = Color(0xFF6D5DF6);
-  static const cyan = Color(0xFF22D3EE);
-  static const pink = Color(0xFFF471B5);
-  static const mint = Color(0xFF34D399);
+  final bool isDark;
 
-  // Type
-  static const textPrimary = Color(0xFFF7F8FC);
-  static const textSecondary = Color(0xFFB6BFD4);
-  static const textMuted = Color(0xFF7B8AA6);
+  /// Backdrop gradient.
+  final Color canvasTop;
+  final Color canvasBottom;
 
-  // Semantic
-  static const success = Color(0xFF4ADE80);
-  static const warning = Color(0xFFFBBF24);
-  static const danger = Color(0xFFFB7185);
+  final Color text;
+  final Color textSecondary;
+  final Color textMuted;
 
-  /// Standard blur. Kept moderate on purpose — see [GlassPanel.blurred].
-  static const double sigma = 16;
+  /// Primary action colour.
+  final Color accent;
 
-  static Color white(double alpha) => Colors.white.withValues(alpha: alpha);
+  /// Links and selected states. Deliberately not the primary fill.
+  final Color accentAlt;
 
-  /// Tone for a budget bar at [fraction] consumed.
-  static Color budgetTone(double fraction) {
+  final Color success;
+  final Color warning;
+  final Color danger;
+
+  /// Card and sheet fill.
+  final Color surfaceHigh;
+
+  /// Chips, inputs, inset rows.
+  final Color surfaceLow;
+
+  /// Panel border.
+  final Color stroke;
+
+  /// Dividers inside a panel.
+  final Color strokeSoft;
+
+  /// Panel drop shadow. Transparent in dark, where the stroke does the work.
+  final Color shadow;
+
+  final Color onAccent;
+
+  static const light = GlassPalette(
+    isDark: false,
+    canvasTop: Color(0xFFCFE4F5),
+    canvasBottom: Color(0xFFF3F7FB),
+    text: Color(0xFF0B1B33),
+    textSecondary: Color(0xFF46586F),
+    textMuted: Color(0xFF7D90A8),
+    accent: Color(0xFF5A4AE3),
+    accentAlt: Color(0xFF0E85B8),
+    success: Color(0xFF0E9F6E),
+    warning: Color(0xFFC2740A),
+    danger: Color(0xFFDC2F55),
+    surfaceHigh: Color(0xCCFFFFFF),
+    surfaceLow: Color(0x80FFFFFF),
+    stroke: Color(0xE6FFFFFF),
+    strokeSoft: Color(0x1A0B1B33),
+    shadow: Color(0x140B2A52),
+    onAccent: Color(0xFFFFFFFF),
+  );
+
+  static const dark = GlassPalette(
+    isDark: true,
+    canvasTop: Color(0xFF070B18),
+    canvasBottom: Color(0xFF03050D),
+    text: Color(0xFFF7F8FC),
+    textSecondary: Color(0xFFB6BFD4),
+    textMuted: Color(0xFF7B8AA6),
+    accent: Color(0xFF6D5DF6),
+    accentAlt: Color(0xFF22D3EE),
+    success: Color(0xFF4ADE80),
+    warning: Color(0xFFFBBF24),
+    danger: Color(0xFFFB7185),
+    surfaceHigh: Color(0x14FFFFFF),
+    surfaceLow: Color(0x0FFFFFFF),
+    stroke: Color(0x24FFFFFF),
+    strokeSoft: Color(0x12FFFFFF),
+    shadow: Color(0x00000000),
+    onAccent: Color(0xFFFFFFFF),
+  );
+
+  /// A translucent wash of [c], used for category tints and selected chips.
+  Color tint(Color c, double alpha) => c.withValues(alpha: alpha);
+
+  /// Tone for a budget or progress bar at [fraction] consumed.
+  Color budgetTone(double fraction) {
     if (fraction >= 1.0) return danger;
     if (fraction >= 0.75) return warning;
-    return mint;
+    return success;
   }
 
-  /// Category hues, matched to the web product so a category keeps its colour
-  /// across web and app.
-  static const _categoryColor = <String, Color>{
+  /// Category hue, darkened for light mode so it clears contrast on white.
+  Color categoryColor(String? id) {
+    final key = id?.toLowerCase();
+    final map = isDark ? _categoryDark : _categoryLight;
+    return map[key] ?? map['other']!;
+  }
+
+  static IconData categoryIcon(String? id) =>
+      _categoryIcons[id?.toLowerCase()] ?? _categoryIcons['other']!;
+
+  static const _categoryDark = <String, Color>{
     'salary': Color(0xFF22C55E),
     'freelance': Color(0xFF06B6D4),
     'investments': Color(0xFF818CF8),
     'food': Color(0xFFFB7185),
-    'groceries': Color(0xFFA0D911),
+    'groceries': Color(0xFFA3D93B),
     'transport': Color(0xFFFB923C),
     'shopping': Color(0xFF60A5FA),
     'bills': Color(0xFF22D3EE),
@@ -68,7 +152,28 @@ abstract final class Glass {
     'other': Color(0xFF94A3B8),
   };
 
-  static const _categoryIcon = <String, IconData>{
+  static const _categoryLight = <String, Color>{
+    'salary': Color(0xFF15803D),
+    'freelance': Color(0xFF0E7490),
+    'investments': Color(0xFF4F46E5),
+    'food': Color(0xFFE11D48),
+    'groceries': Color(0xFF4D7C0F),
+    'transport': Color(0xFFC2410C),
+    'shopping': Color(0xFF1D4ED8),
+    'bills': Color(0xFF0E7490),
+    'utilities': Color(0xFF0E7490),
+    'entertainment': Color(0xFF6D28D9),
+    'health': Color(0xFF0F766E),
+    'education': Color(0xFF0369A1),
+    'travel': Color(0xFFBE185D),
+    'subscriptions': Color(0xFF7E22CE),
+    'rent': Color(0xFFB91C1C),
+    'housing': Color(0xFFB91C1C),
+    'coffee': Color(0xFF92400E),
+    'other': Color(0xFF52647C),
+  };
+
+  static const _categoryIcons = <String, IconData>{
     'salary': Icons.payments_rounded,
     'freelance': Icons.laptop_mac_rounded,
     'investments': Icons.trending_up_rounded,
@@ -89,59 +194,82 @@ abstract final class Glass {
     'other': Icons.category_rounded,
   };
 
-  static Color categoryColor(String? id) =>
-      _categoryColor[id?.toLowerCase()] ?? _categoryColor['other']!;
+  @override
+  GlassPalette copyWith({bool? isDark}) => isDark == null || isDark == this.isDark
+      ? this
+      : (isDark ? GlassPalette.dark : GlassPalette.light);
 
-  static IconData categoryIcon(String? id) =>
-      _categoryIcon[id?.toLowerCase()] ?? _categoryIcon['other']!;
+  @override
+  GlassPalette lerp(covariant GlassPalette? other, double t) {
+    if (other == null) return this;
+    Color l(Color a, Color b) => Color.lerp(a, b, t)!;
+    return GlassPalette(
+      isDark: t < 0.5 ? isDark : other.isDark,
+      canvasTop: l(canvasTop, other.canvasTop),
+      canvasBottom: l(canvasBottom, other.canvasBottom),
+      text: l(text, other.text),
+      textSecondary: l(textSecondary, other.textSecondary),
+      textMuted: l(textMuted, other.textMuted),
+      accent: l(accent, other.accent),
+      accentAlt: l(accentAlt, other.accentAlt),
+      success: l(success, other.success),
+      warning: l(warning, other.warning),
+      danger: l(danger, other.danger),
+      surfaceHigh: l(surfaceHigh, other.surfaceHigh),
+      surfaceLow: l(surfaceLow, other.surfaceLow),
+      stroke: l(stroke, other.stroke),
+      strokeSoft: l(strokeSoft, other.strokeSoft),
+      shadow: l(shadow, other.shadow),
+      onAccent: l(onAccent, other.onAccent),
+    );
+  }
 }
 
-/// The aurora field every screen sits on.
+extension GlassX on BuildContext {
+  GlassPalette get glass => Theme.of(this).extension<GlassPalette>()!;
+}
+
+/// The backdrop every screen sits on.
 ///
-/// The pools are radial gradients, not blurred layers. A `BackdropFilter` per
-/// pool would cost four full-screen blur passes every frame, which a mid-range
-/// phone cannot afford alongside a scrolling list. A radial gradient with a
-/// transparent outer stop is visually the same thing and costs nothing.
-class AuroraBackground extends StatelessWidget {
-  const AuroraBackground({super.key, required this.child});
+/// Light mode is a sky: a pale blue-to-white gradient with a bright pool
+/// overhead, which is what gives near-white panels something to sit against.
+/// Dark mode is an aurora. Both are radial gradients rather than blurred
+/// layers — four full-screen blur passes per frame is not affordable on a
+/// mid-range phone alongside a scrolling list.
+class GlassBackground extends StatelessWidget {
+  const GlassBackground({super.key, required this.child});
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
+
+    final pools = g.isDark
+        ? const [
+            _Pool(color: Color(0xFF6D5DF6), size: 420, strength: 0.42, top: -140, left: -110),
+            _Pool(color: Color(0xFF22D3EE), size: 380, strength: 0.28, top: 40, right: -160),
+            _Pool(color: Color(0xFFF471B5), size: 400, strength: 0.22, bottom: 120, left: -140),
+            _Pool(color: Color(0xFF34D399), size: 360, strength: 0.20, bottom: -170, right: -80),
+          ]
+        : const [
+            _Pool(color: Color(0xFFFFFFFF), size: 460, strength: 0.95, top: -170, left: -40),
+            _Pool(color: Color(0xFF7FB5DC), size: 400, strength: 0.55, top: -80, right: -150),
+            _Pool(color: Color(0xFFBFD9F0), size: 380, strength: 0.45, bottom: 180, left: -150),
+            _Pool(color: Color(0xFFD7DCFB), size: 340, strength: 0.40, bottom: -140, right: -70),
+          ];
+
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Glass.canvas, Glass.canvasDeep],
+          colors: [g.canvasTop, g.canvasBottom],
         ),
       ),
       child: Stack(
         fit: StackFit.expand,
-        children: [
-          const Positioned(
-            top: -140,
-            left: -110,
-            child: _Pool(color: Glass.violet, size: 420, strength: 0.42),
-          ),
-          const Positioned(
-            top: 40,
-            right: -160,
-            child: _Pool(color: Glass.cyan, size: 380, strength: 0.28),
-          ),
-          const Positioned(
-            bottom: 120,
-            left: -140,
-            child: _Pool(color: Glass.pink, size: 400, strength: 0.22),
-          ),
-          const Positioned(
-            bottom: -170,
-            right: -80,
-            child: _Pool(color: Glass.mint, size: 360, strength: 0.20),
-          ),
-          child,
-        ],
+        children: [...pools, child],
       ),
     );
   }
@@ -152,27 +280,41 @@ class _Pool extends StatelessWidget {
     required this.color,
     required this.size,
     required this.strength,
+    this.top,
+    this.left,
+    this.right,
+    this.bottom,
   });
 
   final Color color;
   final double size;
   final double strength;
+  final double? top;
+  final double? left;
+  final double? right;
+  final double? bottom;
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color.withValues(alpha: strength),
-              color.withValues(alpha: strength * 0.35),
-              color.withValues(alpha: 0),
-            ],
-            stops: const [0, 0.45, 1],
+    return Positioned(
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
+      child: IgnorePointer(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                color.withValues(alpha: strength),
+                color.withValues(alpha: strength * 0.35),
+                color.withValues(alpha: 0),
+              ],
+              stops: const [0, 0.45, 1],
+            ),
           ),
         ),
       ),
@@ -182,39 +324,49 @@ class _Pool extends StatelessWidget {
 
 /// A frosted panel.
 ///
-/// [blurred] defaults to false. Real `BackdropFilter` blur is reserved for the
-/// few surfaces where you can actually perceive it — the balance hero, the
-/// floating nav, modal sheets. Applying it to every row in a scrolling list is
-/// what turns a glass UI into a slideshow on a mid-range device; over an aurora
-/// backdrop the translucent fill alone is indistinguishable at list scale.
+/// [blurred] defaults to false. Real BackdropFilter blur is reserved for the
+/// few surfaces where it is perceptible — the balance hero, the floating nav,
+/// modal sheets. On every row of a scrolling list it is a full-screen blur pass
+/// per frame, which a mid-range device cannot absorb.
 class GlassPanel extends StatelessWidget {
   const GlassPanel({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.xl),
     this.radius = 22,
-    this.fill = 0.07,
-    this.stroke = 0.13,
     this.blurred = false,
     this.tint,
+    this.elevated = true,
     this.onTap,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
-  final double fill;
-  final double stroke;
   final bool blurred;
 
   /// Optional hue washed through the panel, used to colour-code a card.
   final Color? tint;
+
+  /// Applies the soft drop shadow in light mode. Off for panels that sit
+  /// directly on another panel.
+  final bool elevated;
+
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final border = BorderRadius.circular(radius);
     final t = tint;
+
+    final fills = t == null
+        ? (g.isDark
+            ? [Colors.white.withValues(alpha: 0.11), Colors.white.withValues(alpha: 0.07)]
+            : [Colors.white.withValues(alpha: 0.88), Colors.white.withValues(alpha: 0.68)])
+        : (g.isDark
+            ? [t.withValues(alpha: 0.26), t.withValues(alpha: 0.08)]
+            : [t.withValues(alpha: 0.16), Colors.white.withValues(alpha: 0.72)]);
 
     Widget surface = DecoratedBox(
       decoration: BoxDecoration(
@@ -222,26 +374,37 @@ class GlassPanel extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: t == null
-              ? [Glass.white(fill + 0.04), Glass.white(fill)]
-              : [
-                  t.withValues(alpha: 0.26),
-                  t.withValues(alpha: 0.08),
-                ],
+          colors: fills,
         ),
-        border: Border.all(color: Glass.white(stroke)),
+        border: Border.all(
+          color: t == null || g.isDark ? g.stroke : t.withValues(alpha: 0.28),
+        ),
       ),
       child: Padding(padding: padding, child: child),
     );
 
     if (blurred) {
       surface = BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: Glass.sigma, sigmaY: Glass.sigma),
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: surface,
       );
     }
 
     Widget panel = ClipRRect(borderRadius: border, child: surface);
+
+    // In light mode the panel and the sky are both nearly white, so the shadow
+    // is the only thing that separates them. In dark mode the stroke does it.
+    if (elevated && !g.isDark) {
+      panel = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: border,
+          boxShadow: [
+            BoxShadow(color: g.shadow, blurRadius: 24, offset: const Offset(0, 8)),
+          ],
+        ),
+        child: panel,
+      );
+    }
 
     if (onTap != null) {
       panel = Stack(
@@ -253,8 +416,8 @@ class GlassPanel extends StatelessWidget {
               child: InkWell(
                 onTap: onTap,
                 borderRadius: border,
-                splashColor: Glass.white(0.06),
-                highlightColor: Glass.white(0.03),
+                splashColor: g.accent.withValues(alpha: 0.10),
+                highlightColor: g.accent.withValues(alpha: 0.05),
                 child: const SizedBox.expand(),
               ),
             ),
@@ -286,7 +449,8 @@ class GlassChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = tone ?? Glass.textSecondary;
+    final g = context.glass;
+    final c = tone ?? g.textSecondary;
     final radius = BorderRadius.circular(AppRadius.pill);
 
     return Material(
@@ -301,16 +465,18 @@ class GlassChip extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: radius,
-            color: selected ? c.withValues(alpha: 0.22) : Glass.white(0.06),
+            color: selected
+                ? c.withValues(alpha: g.isDark ? 0.22 : 0.14)
+                : g.surfaceLow,
             border: Border.all(
-              color: selected ? c.withValues(alpha: 0.55) : Glass.white(0.12),
+              color: selected ? c.withValues(alpha: 0.55) : g.stroke,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 14, color: selected ? c : Glass.textSecondary),
+                Icon(icon, size: 14, color: selected ? c : g.textSecondary),
                 const SizedBox(width: 5),
               ],
               Text(
@@ -319,7 +485,7 @@ class GlassChip extends StatelessWidget {
                   fontSize: 12.5,
                   height: 1.1,
                   fontWeight: FontWeight.w600,
-                  color: selected ? c : Glass.textSecondary,
+                  color: selected ? c : g.textSecondary,
                 ),
               ),
             ],
@@ -330,21 +496,19 @@ class GlassChip extends StatelessWidget {
   }
 }
 
-/// Rounded category glyph. The single most useful icon in the app — it makes a
-/// transaction list scannable without reading a word of it.
+/// Rounded category glyph. Makes a transaction list scannable without reading
+/// a word of it.
 class CategoryGlyph extends StatelessWidget {
-  const CategoryGlyph({
-    super.key,
-    required this.categoryId,
-    this.size = 42,
-  });
+  const CategoryGlyph({super.key, required this.categoryId, this.size = 42});
 
   final String categoryId;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final tone = Glass.categoryColor(categoryId);
+    final g = context.glass;
+    final tone = g.categoryColor(categoryId);
+
     return Container(
       width: size,
       height: size,
@@ -353,15 +517,16 @@ class CategoryGlyph extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            tone.withValues(alpha: 0.36),
-            tone.withValues(alpha: 0.14),
-          ],
+          colors: g.isDark
+              ? [tone.withValues(alpha: 0.36), tone.withValues(alpha: 0.14)]
+              : [tone.withValues(alpha: 0.20), tone.withValues(alpha: 0.09)],
         ),
-        border: Border.all(color: tone.withValues(alpha: 0.34)),
+        border: Border.all(
+          color: tone.withValues(alpha: g.isDark ? 0.34 : 0.22),
+        ),
       ),
       child: Icon(
-        Glass.categoryIcon(categoryId),
+        GlassPalette.categoryIcon(categoryId),
         size: size * 0.46,
         color: tone,
       ),
@@ -369,7 +534,7 @@ class CategoryGlyph extends StatelessWidget {
   }
 }
 
-/// A flat progress track. Used for budgets and goals.
+/// A flat progress track. Used for budgets.
 class GlassBar extends StatelessWidget {
   const GlassBar({
     super.key,
@@ -384,12 +549,19 @@ class GlassBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final clamped = fraction.clamp(0.0, 1.0);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(height),
       child: Stack(
         children: [
-          Container(height: height, color: Glass.white(0.09)),
+          Container(
+            height: height,
+            color: g.isDark
+                ? Colors.white.withValues(alpha: 0.09)
+                : const Color(0xFF0B1B33).withValues(alpha: 0.08),
+          ),
           FractionallySizedBox(
             widthFactor: clamped,
             child: Container(
@@ -397,7 +569,7 @@ class GlassBar extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(height),
                 gradient: LinearGradient(
-                  colors: [tone.withValues(alpha: 0.75), tone],
+                  colors: [tone.withValues(alpha: 0.72), tone],
                 ),
               ),
             ),
@@ -427,6 +599,8 @@ class GlassRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
+
     return SizedBox(
       width: size,
       height: size,
@@ -435,6 +609,9 @@ class GlassRing extends StatelessWidget {
           fraction: fraction.clamp(0.0, 1.0),
           tone: tone,
           stroke: stroke,
+          track: g.isDark
+              ? Colors.white.withValues(alpha: 0.10)
+              : const Color(0xFF0B1B33).withValues(alpha: 0.08),
         ),
         child: Center(child: child),
       ),
@@ -447,11 +624,13 @@ class _RingPainter extends CustomPainter {
     required this.fraction,
     required this.tone,
     required this.stroke,
+    required this.track,
   });
 
   final double fraction;
   final Color tone;
   final double stroke;
+  final Color track;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -459,38 +638,42 @@ class _RingPainter extends CustomPainter {
     final centre = rect.center;
     final radius = (math.min(size.width, size.height) - stroke) / 2;
 
-    final track = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..color = Glass.white(0.10);
+    canvas.drawCircle(
+      centre,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..color = track,
+    );
 
-    final progress = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..shader = SweepGradient(
-        startAngle: -math.pi / 2,
-        endAngle: math.pi * 1.5,
-        colors: [tone.withValues(alpha: 0.55), tone],
-      ).createShader(rect);
-
-    canvas.drawCircle(centre, radius, track);
     canvas.drawArc(
       Rect.fromCircle(center: centre, radius: radius),
       -math.pi / 2,
       math.pi * 2 * fraction,
       false,
-      progress,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..shader = SweepGradient(
+          startAngle: -math.pi / 2,
+          endAngle: math.pi * 1.5,
+          colors: [tone.withValues(alpha: 0.55), tone],
+        ).createShader(rect),
     );
   }
 
   @override
   bool shouldRepaint(_RingPainter old) =>
-      old.fraction != fraction || old.tone != tone || old.stroke != stroke;
+      old.fraction != fraction ||
+      old.tone != tone ||
+      old.stroke != stroke ||
+      old.track != track;
 }
 
-/// Section heading. One job: name the block and, optionally, offer one action.
+/// Section heading. Names the block and, optionally, offers one action.
 class SectionHeading extends StatelessWidget {
   const SectionHeading({
     super.key,
@@ -505,6 +688,8 @@ class SectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
+
     return Padding(
       padding: const EdgeInsets.only(
         left: AppSpacing.xs,
@@ -516,11 +701,11 @@ class SectionHeading extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Glass.textPrimary,
-                letterSpacing: -0.2,
+                fontWeight: FontWeight.w700,
+                color: g.text,
+                letterSpacing: -0.3,
               ),
             ),
           ),
@@ -528,17 +713,14 @@ class SectionHeading extends StatelessWidget {
             TextButton(
               onPressed: onAction,
               style: TextButton.styleFrom(
-                foregroundColor: Glass.cyan,
+                foregroundColor: g.accentAlt,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 minimumSize: const Size(0, 32),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
                 actionLabel!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
         ],
@@ -556,12 +738,14 @@ class GlassSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
+
     return Container(
       height: height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        color: Glass.white(0.05),
-        border: Border.all(color: Glass.white(0.08)),
+        color: g.surfaceLow,
+        border: Border.all(color: g.stroke),
       ),
     );
   }
@@ -586,6 +770,8 @@ class GlassEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
+
     return GlassPanel(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xl,
@@ -598,30 +784,26 @@ class GlassEmpty extends StatelessWidget {
             height: 54,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Glass.white(0.07),
-              border: Border.all(color: Glass.white(0.13)),
+              color: g.surfaceLow,
+              border: Border.all(color: g.stroke),
             ),
-            child: Icon(icon, color: Glass.textSecondary, size: 24),
+            child: Icon(icon, color: g.textSecondary, size: 24),
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15.5,
               fontWeight: FontWeight.w600,
-              color: Glass.textPrimary,
+              color: g.text,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             body,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13.5,
-              height: 1.45,
-              color: Glass.textMuted,
-            ),
+            style: TextStyle(fontSize: 13.5, height: 1.45, color: g.textMuted),
           ),
           if (actionLabel != null) ...[
             const SizedBox(height: AppSpacing.xl),

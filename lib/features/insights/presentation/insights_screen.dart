@@ -15,6 +15,7 @@ class InsightsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final budgets = PreviewExtras.budgets();
 
     var spentMinor = 0;
@@ -28,7 +29,7 @@ class InsightsScreen extends StatelessWidget {
         _Segment(
           label: b.label,
           value: b.spent,
-          color: Glass.categoryColor(b.categoryId),
+          color: g.categoryColor(b.categoryId),
           categoryId: b.categoryId,
         ),
     ]..sort((a, b) => b.value.minor.compareTo(a.value.minor));
@@ -64,16 +65,17 @@ class InsightsScreen extends StatelessWidget {
                             painter: _DonutPainter(
                               segments: segments,
                               totalMinor: spentMinor,
+                              track: g.strokeSoft,
                             ),
                           ),
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
+                              Text(
                                 'Spent',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Glass.textMuted,
+                                  color: g.textMuted,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -81,7 +83,7 @@ class InsightsScreen extends StatelessWidget {
                                 spent.format(compact: true),
                                 style: context.text.moneyLg.copyWith(
                                   fontSize: 24,
-                                  color: Glass.textPrimary,
+                                  color: g.text,
                                 ),
                               ),
                             ],
@@ -110,9 +112,9 @@ class InsightsScreen extends StatelessWidget {
                               const SizedBox(width: 6),
                               Text(
                                 s.label,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12.5,
-                                  color: Glass.textSecondary,
+                                  color: g.textSecondary,
                                 ),
                               ),
                             ],
@@ -152,10 +154,17 @@ class _Segment {
 }
 
 class _DonutPainter extends CustomPainter {
-  _DonutPainter({required this.segments, required this.totalMinor});
+  _DonutPainter({
+    required this.segments,
+    required this.totalMinor,
+    required this.track,
+  });
 
   final List<_Segment> segments;
   final int totalMinor;
+
+  /// Passed in: a CustomPainter has no BuildContext to read the palette from.
+  final Color track;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -173,7 +182,7 @@ class _DonutPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
-        ..color = Glass.white(0.06),
+        ..color = track,
     );
 
     var start = -math.pi / 2;
@@ -200,7 +209,9 @@ class _DonutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DonutPainter old) =>
-      old.totalMinor != totalMinor || old.segments.length != segments.length;
+      old.totalMinor != totalMinor ||
+      old.segments.length != segments.length ||
+      old.track != track;
 }
 
 class _BudgetRow extends StatelessWidget {
@@ -210,8 +221,9 @@ class _BudgetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = context.glass;
     final over = budget.spent > budget.limit;
-    final tone = Glass.budgetTone(budget.fraction);
+    final tone = g.budgetTone(budget.fraction);
 
     return GlassPanel(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -224,10 +236,10 @@ class _BudgetRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   budget.label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
-                    color: Glass.textPrimary,
+                    color: g.text,
                   ),
                 ),
               ),
@@ -235,7 +247,7 @@ class _BudgetRow extends StatelessWidget {
                 '${budget.spent.format(compact: true)} / ${budget.limit.format(compact: true)}',
                 style: context.text.numMeta.copyWith(
                   fontSize: 12.5,
-                  color: Glass.textSecondary,
+                  color: g.textSecondary,
                 ),
               ),
             ],
@@ -252,7 +264,7 @@ class _BudgetRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: over ? FontWeight.w600 : FontWeight.w400,
-                color: over ? Glass.danger : Glass.textMuted,
+                color: over ? g.danger : g.textMuted,
               ),
             ),
           ),
