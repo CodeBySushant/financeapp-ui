@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/security/app_lock.dart';
 import '../../../core/session/auth_controller.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/glass.dart';
-import '../../../core/security/app_lock.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/glass_route.dart';
+import '../../../core/widgets/screen_header.dart';
 import '../../accounts/presentation/accounts_screen.dart';
 import '../../assistant/presentation/assistant_screen.dart';
-import '../../../core/widgets/screen_header.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({
@@ -23,9 +23,44 @@ class ProfileScreen extends ConsumerWidget {
   /// Profile is no longer a bar destination, so it carries its own way out.
   final VoidCallback onBack;
 
+  Future<void> _confirmSignOut(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool everywhere,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(everywhere ? 'Sign out everywhere?' : 'Sign out?'),
+        content: Text(
+          everywhere
+              ? 'Every device signed in to this account will be signed out.'
+              : 'You will need your password to sign back in on this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    // The gate swaps this screen out once the state flips, so there is nothing
+    // to navigate here.
+    await ref
+        .read(authControllerProvider.notifier)
+        .signOut(everywhere: everywhere);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final g = context.glass;
+    final user = ref.watch(currentUserProvider);
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(

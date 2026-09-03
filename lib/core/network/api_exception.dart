@@ -71,20 +71,13 @@ class ApiException implements Exception {
   }
 
   factory ApiException.fromDio(DioException e) {
+    // A `default` rather than an exhaustive list of members: dio adds enum
+    // values in minor releases (5.11 introduced transformTimeout), and an
+    // exhaustive switch turns that into a compile error on every upgrade.
+    // Anything that is not a real HTTP response is a transport failure.
     switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return const ApiException(
-          ApiErrorCode.network,
-          'The server took too long to answer. Check your connection and try again.',
-        );
-      case DioExceptionType.connectionError:
-      case DioExceptionType.unknown:
-        return const ApiException(
-          ApiErrorCode.network,
-          'Could not reach Fintrak. Check your connection and try again.',
-        );
+      case DioExceptionType.badResponse:
+        break;
       case DioExceptionType.cancel:
         return const ApiException(ApiErrorCode.unknown, 'Request cancelled.');
       case DioExceptionType.badCertificate:
@@ -92,8 +85,18 @@ class ApiException implements Exception {
           ApiErrorCode.network,
           'The connection could not be verified.',
         );
-      case DioExceptionType.badResponse:
-        break;
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return const ApiException(
+          ApiErrorCode.network,
+          'The server took too long to answer. Check your connection and try again.',
+        );
+      default:
+        return const ApiException(
+          ApiErrorCode.network,
+          'Could not reach Fintrak. Check your connection and try again.',
+        );
     }
 
     final response = e.response;

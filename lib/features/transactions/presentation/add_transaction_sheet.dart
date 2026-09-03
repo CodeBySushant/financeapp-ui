@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/currency_provider.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/glass.dart';
 import '../../../core/utils/money.dart';
 import '../../accounts/application/accounts_provider.dart';
