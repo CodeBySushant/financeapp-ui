@@ -216,7 +216,15 @@ class _Greeting extends StatelessWidget {
   }
 }
 
-/// The one figure that matters, given the room to matter.
+/// The balance card.
+///
+/// The default treatment for this — a small label, a big number under it, then
+/// a symmetrical pair of stat tiles with up/down arrows — is the single most
+/// templated card in finance UI, and it was what this looked like. Three
+/// changes: the figure leads and the label explains it afterwards, which is how
+/// a price is set on a product page; the two figures are joined by a
+/// proportion bar so they relate to each other instead of sitting as
+/// disconnected stats; and the decorative arrow glyphs are gone.
 class _BalanceHero extends StatelessWidget {
   const _BalanceHero({required this.summary});
 
@@ -227,42 +235,17 @@ class _BalanceHero extends StatelessWidget {
     final g = context.glass;
     final text = context.text;
 
+    final earned = summary.monthIncome;
+    final spent = summary.monthExpenses;
+    final share = earned.isZero ? 0.0 : spent.ratioOf(earned);
+
     return GlassPanel(
       blurred: true,
       radius: 26,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xxl,
-        AppSpacing.xxl,
-        AppSpacing.xxl,
-        AppSpacing.lg,
-      ),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Available balance',
-                  style: TextStyle(
-                    fontSize: 13,
-                    letterSpacing: -0.1,
-                    color: g.textMuted,
-                  ),
-                ),
-              ),
-              Text(
-                summary.periodLabel,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: -0.1,
-                  color: g.textMuted,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -272,18 +255,44 @@ class _BalanceHero extends StatelessWidget {
               semanticsLabel: summary.availableBalance.semanticLabel(),
             ),
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Divider(height: 1, thickness: 1, color: g.strokeSoft),
-          _Flow(
-            label: 'Income',
-            amount: summary.monthIncome,
-            positive: true,
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Available balance in ${summary.periodLabel}',
+            style: TextStyle(
+              fontSize: 13.5,
+              letterSpacing: -0.1,
+              color: g.textMuted,
+            ),
           ),
-          Divider(height: 1, thickness: 1, color: g.strokeSoft),
-          _Flow(
-            label: 'Spent',
-            amount: summary.monthExpenses,
-            positive: false,
+          const SizedBox(height: AppSpacing.xxl),
+          // How much of what came in has gone back out. Two numbers in a row
+          // tell you nothing about each other; this makes the relationship the
+          // point.
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: Stack(
+              children: [
+                Container(
+                  height: 5,
+                  color: g.isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.white.withValues(alpha: 0.85),
+                ),
+                FractionallySizedBox(
+                  widthFactor: share.clamp(0.0, 1.0),
+                  child: Container(height: 5, color: g.text),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _Flow(label: 'Spent', amount: spent, emphasis: true),
+              const Spacer(),
+              _Flow(label: 'Earned', amount: earned, emphasis: false),
+            ],
           ),
         ],
       ),
@@ -295,46 +304,38 @@ class _Flow extends StatelessWidget {
   const _Flow({
     required this.label,
     required this.amount,
-    required this.positive,
+    required this.emphasis,
   });
 
   final String label;
   final Money amount;
-  final bool positive;
+  final bool emphasis;
 
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      child: Row(
-        children: [
-          Icon(
-            positive ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-            size: 15,
-            // Green earns its place: money arriving is the one genuinely good
-            // event on this screen. Money leaving is normal, so it stays neutral
-            // rather than being painted as an alarm.
-            color: positive ? g.success : g.textMuted,
+    return Column(
+      crossAxisAlignment:
+          emphasis ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.5,
+            letterSpacing: -0.05,
+            color: g.textMuted,
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                letterSpacing: -0.15,
-                color: g.textSecondary,
-              ),
-            ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          amount.format(),
+          style: context.text.moneyMd.copyWith(
+            color: emphasis ? g.text : g.textSecondary,
           ),
-          Text(
-            amount.format(),
-            style: context.text.moneyMd.copyWith(color: g.text),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

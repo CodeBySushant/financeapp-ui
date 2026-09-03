@@ -80,7 +80,11 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   Widget build(BuildContext context) {
     final g = context.glass;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    final bottom = MediaQuery.viewPaddingOf(context).bottom;
+    // paddingOf, not viewPaddingOf: viewPadding keeps reporting the gesture-bar
+    // strip while the keyboard is up, so adding it on top of viewInsets counted
+    // the same space twice and pushed the content past the bottom edge.
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.9 - keyboard;
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboard),
@@ -90,6 +94,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
           filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
           child: Container(
             width: double.infinity,
+            constraints: BoxConstraints(maxHeight: maxHeight),
             padding: EdgeInsets.fromLTRB(
               AppSpacing.xl,
               AppSpacing.md,
@@ -103,13 +108,16 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  g.stroke,
-                  const Color(0xFF0B1020).withValues(alpha: 0.86),
+                  g.isDark
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : Colors.white.withValues(alpha: 0.86),
+                  g.canvasBottom.withValues(alpha: g.isDark ? 0.86 : 0.92),
                 ],
               ),
               border: Border.all(color: g.stroke),
             ),
-            child: Column(
+            child: SingleChildScrollView(
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -249,6 +257,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                 ),
               ],
+            ),
             ),
           ),
         ),

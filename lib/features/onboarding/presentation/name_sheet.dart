@@ -55,7 +55,11 @@ class _NameSheetState extends State<_NameSheet> {
   Widget build(BuildContext context) {
     final g = context.glass;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    final bottom = MediaQuery.viewPaddingOf(context).bottom;
+    // paddingOf, not viewPaddingOf: viewPadding keeps reporting the gesture-bar
+    // strip while the keyboard is up, so adding it on top of viewInsets counted
+    // the same space twice and pushed the content past the bottom edge.
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.9 - keyboard;
     final editing = widget.initial != null;
 
     return PopScope(
@@ -83,11 +87,12 @@ class _NameSheetState extends State<_NameSheet> {
                   end: Alignment.bottomCenter,
                   colors: [
                     g.stroke,
-                    const Color(0xFF0B1020).withValues(alpha: 0.88),
+                  g.canvasBottom.withValues(alpha: g.isDark ? 0.86 : 0.92),
                   ],
                 ),
                 border: Border.all(color: g.stroke),
               ),
+              child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,6 +147,7 @@ class _NameSheetState extends State<_NameSheet> {
                   ),
                 ],
               ),
+            ),
             ),
           ),
         ),

@@ -279,21 +279,17 @@ class _AddButton extends StatelessWidget {
             child: Ink(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [g.accent, Color.lerp(g.accent, g.accentAlt, 0.45)!],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: g.accent.withValues(alpha: 0.42),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: g.accent,
               ),
-              // No label. A labelled sixth slot would read as another tab; a
-              // filled tile with a single glyph reads as an action.
+              // The glow this used to carry was drawn inside the bar's own
+              // ClipRRect, so the blur got sliced off at the pill's edge and
+              // read as a hard blue wedge rather than a halo. A flat tile needs
+              // no glow to be legible as the primary action. The two-stop
+              // gradient went with it — accent and accentAlt are the same
+              // colour now, so it was interpolating between a value and itself.
+              //
+              // No label either: a labelled sixth slot would read as another
+              // tab; a filled tile with a single glyph reads as an action.
               child: Center(
                 child: Icon(Icons.add_rounded, size: 24, color: g.onAccent),
               ),

@@ -52,75 +52,66 @@ class InsightsScreen extends StatelessWidget {
           sliver: SliverList.list(
             children: [
               GlassPanel(
+                blurred: true,
                 padding: const EdgeInsets.all(AppSpacing.xxl),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      height: 190,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CustomPaint(
-                            size: const Size(190, 190),
-                            painter: _DonutPainter(
-                              segments: segments,
-                              totalMinor: spentMinor,
-                              track: g.strokeSoft,
+                    // The ring is inset inside a square box rather than filling
+                    // it. Previously the stroke's outer edge landed exactly on
+                    // the bounding box, so the round caps and antialiasing were
+                    // clipped against it.
+                    Center(
+                      child: SizedBox(
+                        width: 168,
+                        height: 168,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CustomPaint(
+                              size: const Size.square(168),
+                              painter: _DonutPainter(
+                                segments: segments,
+                                totalMinor: spentMinor,
+                                track: g.strokeSoft,
+                              ),
                             ),
-                          ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Spent',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: g.textMuted,
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  spent.format(compact: true),
+                                  style: context.text.moneyLg.copyWith(
+                                    color: g.text,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                spent.format(compact: true),
-                                style: context.text.moneyLg.copyWith(
-                                  fontSize: 24,
-                                  color: g.text,
+                                const SizedBox(height: 1),
+                                Text(
+                                  'spent',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    letterSpacing: -0.05,
+                                    color: g.textMuted,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xl),
-                    Wrap(
-                      spacing: AppSpacing.md,
-                      runSpacing: AppSpacing.sm,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        for (final s in segments)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 9,
-                                height: 9,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: s.color,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                s.label,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: g.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    // A legend of bare colour dots asks you to match hues back
+                    // to a chart. Giving each row its amount and share makes it
+                    // readable on its own and uses the card's width.
+                    for (var i = 0; i < segments.length; i++) ...[
+                      if (i > 0)
+                        Divider(height: 1, indent: 20, color: g.strokeSoft),
+                      _LegendRow(
+                        segment: segments[i],
+                        totalMinor: spentMinor,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -170,10 +161,14 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (totalMinor <= 0) return;
 
-    const stroke = 26.0;
-    const gap = 0.035; // radians of breathing room between arcs
+    const stroke = 18.0;
+    const gap = 0.045; // radians of breathing room between arcs
+    // One extra pixel of inset: with round caps, an arc whose outer edge sits
+    // exactly on the bounding box gets shaved by antialiasing.
+    const inset = 1.0;
     final centre = Offset(size.width / 2, size.height / 2);
-    final radius = (math.min(size.width, size.height) - stroke) / 2;
+    final radius =
+        (math.min(size.width, size.height) - stroke) / 2 - inset;
     final rect = Rect.fromCircle(center: centre, radius: radius);
 
     canvas.drawCircle(
@@ -267,6 +262,58 @@ class _BudgetRow extends StatelessWidget {
                 color: over ? g.danger : g.textMuted,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendRow extends StatelessWidget {
+  const _LegendRow({required this.segment, required this.totalMinor});
+
+  final _Segment segment;
+  final int totalMinor;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = context.glass;
+    final share =
+        totalMinor <= 0 ? 0 : (segment.value.minor / totalMinor * 100).round();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: segment.color,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              segment.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14.5,
+                letterSpacing: -0.15,
+                color: g.text,
+              ),
+            ),
+          ),
+          Text(
+            '$share%',
+            style: TextStyle(fontSize: 13, color: g.textMuted),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Text(
+            segment.value.format(),
+            style: context.text.moneyMd.copyWith(color: g.text),
           ),
         ],
       ),
