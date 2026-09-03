@@ -20,6 +20,11 @@ class ShellDestination {
   final IconData selectedIcon;
 }
 
+/// The four destinations the bottom bar offers.
+///
+/// Profile is deliberately absent: it is reached from the avatar in the header,
+/// and offering the same screen in two places wastes a slot in a bar that is
+/// already tight. It still exists as a screen — see [kScreenCount].
 const shellDestinations = <ShellDestination>[
   ShellDestination(
     label: 'Home',
@@ -41,14 +46,15 @@ const shellDestinations = <ShellDestination>[
     icon: Icons.flag_outlined,
     selectedIcon: Icons.flag_rounded,
   ),
-  ShellDestination(
-    label: 'Profile',
-    icon: Icons.person_outline_rounded,
-    selectedIcon: Icons.person_rounded,
-  ),
 ];
 
-/// Wraps the five top-level sections.
+/// Index of the Profile screen. Not a bar destination.
+const kProfileIndex = 4;
+
+/// Total screens in the shell: the four destinations plus Profile.
+const kScreenCount = 5;
+
+/// Wraps the top-level sections.
 ///
 /// The add action is a separate widget rather than a sixth entry in
 /// [shellDestinations], so it can never emit an index into that list.

@@ -3,22 +3,18 @@ import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Two type roles.
+/// One typeface, used for everything.
 ///
-///  * **Plus Jakarta Sans** carries every word in the interface — UI, headings,
-///    labels. It has a tall x-height and geometric-humanist letterforms that
-///    stay legible at 11px over a translucent surface, which Inter's flatter
-///    forms do not do as well on glass.
-///  * **Space Grotesk** carries every monetary and numeric value, with tabular
-///    figures so digits never shift width as an amount updates.
+/// Reversing an earlier decision here. Plus Jakarta Sans and Space Grotesk both
+/// have real personality, and that was the problem: the brief is now "premium,
+/// like Apple", and Apple's type voice is a neutral grotesque with almost no
+/// personality at all — the restraint *is* the style. Inter is the closest open
+/// equivalent to SF Pro, so it carries UI, headings and money alike, with
+/// tabular figures on anything numeric so digits never shift width.
 ///
-/// The previous build used Fraunces for headlines and JetBrains Mono for money.
-/// Both were wrong here: a serif is an editorial voice sitting inside a glass
-/// interface, and a monospace makes a balance read like a code listing rather
-/// than an amount of money.
-///
-/// Widgets read these through `context.text`, never by calling GoogleFonts
-/// directly, so swapping a face stays a one-file change.
+/// The premium signal comes from the scale, not the face: tight negative
+/// tracking on large sizes, semibold rather than bold, and a wide gap between
+/// the largest and smallest steps.
 @immutable
 class AppText extends ThemeExtension<AppText> {
   const AppText({
@@ -69,18 +65,19 @@ class AppText extends ThemeExtension<AppText> {
   static AppText resolve(Color ink, Color muted) {
     // Money. Negative tracking scales with size so large figures stay tight and
     // small ones stay readable.
-    TextStyle figure(double size, FontWeight w, {Color? color, double h = 1.15}) =>
-        GoogleFonts.spaceGrotesk(
+    TextStyle figure(double size, FontWeight w, {Color? color, double h = 1.1}) =>
+        GoogleFonts.inter(
           fontSize: size,
           fontWeight: w,
           height: h,
           color: color ?? ink,
-          letterSpacing: -0.018 * size,
+          // Apple's hallmark: the bigger the type, the tighter the tracking.
+          letterSpacing: -0.026 * size,
           fontFeatures: _tabular,
         );
 
     TextStyle display(double size, FontWeight w, double tracking, double h) =>
-        GoogleFonts.plusJakartaSans(
+        GoogleFonts.inter(
           fontSize: size,
           fontWeight: w,
           height: h,
@@ -89,39 +86,39 @@ class AppText extends ThemeExtension<AppText> {
         );
 
     return AppText(
-      kicker: GoogleFonts.plusJakartaSans(
+      kicker: GoogleFonts.inter(
         fontSize: 12,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0,
         height: 1.2,
         color: muted,
       ),
-      displayLg: display(28, FontWeight.w700, -0.024, 1.08),
-      displayMd: display(21, FontWeight.w600, -0.020, 1.15),
-      displaySm: display(17, FontWeight.w600, -0.016, 1.22),
-      voice: GoogleFonts.plusJakartaSans(
-        fontSize: 15.5,
+      displayLg: display(30, FontWeight.w600, -0.028, 1.06),
+      displayMd: display(22, FontWeight.w600, -0.022, 1.14),
+      displaySm: display(17, FontWeight.w600, -0.016, 1.24),
+      voice: GoogleFonts.inter(
+        fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
         color: ink,
-        letterSpacing: -0.05,
+        letterSpacing: -0.16,
       ),
-      moneyXl: figure(34, FontWeight.w700, h: 1.05),
-      moneyLg: figure(22, FontWeight.w600),
-      moneyMd: figure(15.5, FontWeight.w600, h: 1.25),
-      moneySm: figure(14, FontWeight.w600, h: 1.3),
-      numMeta: figure(12, FontWeight.w500, color: muted, h: 1.3),
+      moneyXl: figure(46, FontWeight.w600, h: 1.0),
+      moneyLg: figure(24, FontWeight.w600, h: 1.1),
+      moneyMd: figure(16, FontWeight.w500, h: 1.25),
+      moneySm: figure(14.5, FontWeight.w500, h: 1.3),
+      numMeta: figure(12.5, FontWeight.w400, color: muted, h: 1.3),
     );
   }
 
   static TextTheme uiTextTheme(Color ink, Color muted) {
-    final base = GoogleFonts.plusJakartaSansTextTheme();
+    final base = GoogleFonts.interTextTheme();
     return base.copyWith(
       titleLarge: base.titleLarge?.copyWith(
         fontSize: 20,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: ink,
-        letterSpacing: -0.4,
+        letterSpacing: -0.5,
       ),
       titleMedium: base.titleMedium?.copyWith(
         fontSize: 15,

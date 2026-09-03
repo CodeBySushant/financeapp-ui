@@ -10,11 +10,16 @@ class ScreenHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.onBack,
   });
 
   final String title;
   final String? subtitle;
   final Widget? trailing;
+
+  /// Shows a back affordance. Needed by screens reached from somewhere other
+  /// than the bar, which have no tab to indicate where they sit.
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +35,32 @@ class ScreenHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (onBack != null) ...[
+            Semantics(
+              button: true,
+              label: 'Back',
+              child: GestureDetector(
+                onTap: onBack,
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: g.isDark
+                        ? Colors.white.withValues(alpha: 0.10)
+                        : Colors.white.withValues(alpha: 0.78),
+                    border: Border.all(color: g.stroke, width: 0.8),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 18,
+                    color: g.text,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

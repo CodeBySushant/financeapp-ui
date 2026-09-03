@@ -73,40 +73,40 @@ class GlassPalette extends ThemeExtension<GlassPalette> {
 
   static const light = GlassPalette(
     isDark: false,
-    canvasTop: Color(0xFFCFE4F5),
-    canvasBottom: Color(0xFFF3F7FB),
-    text: Color(0xFF0B1B33),
-    textSecondary: Color(0xFF46586F),
-    textMuted: Color(0xFF7D90A8),
-    accent: Color(0xFF5A4AE3),
-    accentAlt: Color(0xFF0E85B8),
-    success: Color(0xFF0E9F6E),
-    warning: Color(0xFFC2740A),
-    danger: Color(0xFFDC2F55),
-    surfaceHigh: Color(0xCCFFFFFF),
-    surfaceLow: Color(0x80FFFFFF),
-    stroke: Color(0xE6FFFFFF),
-    strokeSoft: Color(0x1A0B1B33),
-    shadow: Color(0x140B2A52),
+    canvasTop: Color(0xFFE8EAEF),
+    canvasBottom: Color(0xFFFAFAFC),
+    text: Color(0xFF1D1D1F),
+    textSecondary: Color(0xFF515154),
+    textMuted: Color(0xFF86868B),
+    accent: Color(0xFF0071E3),
+    accentAlt: Color(0xFF0071E3),
+    success: Color(0xFF1D8A4E),
+    warning: Color(0xFFB25000),
+    danger: Color(0xFFC7332B),
+    surfaceHigh: Color(0x8CFFFFFF),
+    surfaceLow: Color(0x59FFFFFF),
+    stroke: Color(0xD9FFFFFF),
+    strokeSoft: Color(0x141D1D1F),
+    shadow: Color(0x1A0A1020),
     onAccent: Color(0xFFFFFFFF),
   );
 
   static const dark = GlassPalette(
     isDark: true,
-    canvasTop: Color(0xFF070B18),
-    canvasBottom: Color(0xFF03050D),
-    text: Color(0xFFF7F8FC),
-    textSecondary: Color(0xFFB6BFD4),
-    textMuted: Color(0xFF7B8AA6),
-    accent: Color(0xFF6D5DF6),
-    accentAlt: Color(0xFF22D3EE),
-    success: Color(0xFF4ADE80),
-    warning: Color(0xFFFBBF24),
-    danger: Color(0xFFFB7185),
+    canvasTop: Color(0xFF16171B),
+    canvasBottom: Color(0xFF000000),
+    text: Color(0xFFF5F5F7),
+    textSecondary: Color(0xFFA1A1A6),
+    textMuted: Color(0xFF6E6E73),
+    accent: Color(0xFF0A84FF),
+    accentAlt: Color(0xFF0A84FF),
+    success: Color(0xFF30D158),
+    warning: Color(0xFFFF9F0A),
+    danger: Color(0xFFFF453A),
     surfaceHigh: Color(0x14FFFFFF),
     surfaceLow: Color(0x0FFFFFFF),
-    stroke: Color(0x24FFFFFF),
-    strokeSoft: Color(0x12FFFFFF),
+    stroke: Color(0x26FFFFFF),
+    strokeSoft: Color(0x1AFFFFFF),
     shadow: Color(0x00000000),
     onAccent: Color(0xFFFFFFFF),
   );
@@ -131,46 +131,50 @@ class GlassPalette extends ThemeExtension<GlassPalette> {
   static IconData categoryIcon(String? id) =>
       _categoryIcons[id?.toLowerCase()] ?? _categoryIcons['other']!;
 
+  /// Chart hues only. These never appear on a glyph or a row — colour in this
+  /// app encodes data, it does not decorate. The set is deliberately muted and
+  /// harmonious rather than a spectrum: six saturated hues side by side is the
+  /// single loudest thing a finance UI can do.
   static const _categoryDark = <String, Color>{
-    'salary': Color(0xFF22C55E),
-    'freelance': Color(0xFF06B6D4),
-    'investments': Color(0xFF818CF8),
-    'food': Color(0xFFFB7185),
-    'groceries': Color(0xFFA3D93B),
-    'transport': Color(0xFFFB923C),
-    'shopping': Color(0xFF60A5FA),
-    'bills': Color(0xFF22D3EE),
-    'utilities': Color(0xFF22D3EE),
-    'entertainment': Color(0xFFA78BFA),
-    'health': Color(0xFF2DD4BF),
-    'education': Color(0xFF38BDF8),
-    'travel': Color(0xFFF472B6),
-    'subscriptions': Color(0xFFC084FC),
-    'rent': Color(0xFFF87171),
-    'housing': Color(0xFFF87171),
-    'coffee': Color(0xFFD9A066),
-    'other': Color(0xFF94A3B8),
+    'salary': Color(0xFF6FA88A),
+    'freelance': Color(0xFF6E93B8),
+    'investments': Color(0xFF8E88B4),
+    'food': Color(0xFFB88A7A),
+    'groceries': Color(0xFF8FA37E),
+    'transport': Color(0xFFB39A70),
+    'shopping': Color(0xFF7E97B5),
+    'bills': Color(0xFF7FA3A8),
+    'utilities': Color(0xFF7FA3A8),
+    'entertainment': Color(0xFF9C88AA),
+    'health': Color(0xFF74A79C),
+    'education': Color(0xFF7593AE),
+    'travel': Color(0xFFB0879B),
+    'subscriptions': Color(0xFF9A8FB5),
+    'rent': Color(0xFFB08B85),
+    'housing': Color(0xFFB08B85),
+    'coffee': Color(0xFFB09A82),
+    'other': Color(0xFF8A8A8F),
   };
 
   static const _categoryLight = <String, Color>{
-    'salary': Color(0xFF15803D),
-    'freelance': Color(0xFF0E7490),
-    'investments': Color(0xFF4F46E5),
-    'food': Color(0xFFE11D48),
-    'groceries': Color(0xFF4D7C0F),
-    'transport': Color(0xFFC2410C),
-    'shopping': Color(0xFF1D4ED8),
-    'bills': Color(0xFF0E7490),
-    'utilities': Color(0xFF0E7490),
-    'entertainment': Color(0xFF6D28D9),
-    'health': Color(0xFF0F766E),
-    'education': Color(0xFF0369A1),
-    'travel': Color(0xFFBE185D),
-    'subscriptions': Color(0xFF7E22CE),
-    'rent': Color(0xFFB91C1C),
-    'housing': Color(0xFFB91C1C),
-    'coffee': Color(0xFF92400E),
-    'other': Color(0xFF52647C),
+    'salary': Color(0xFF4C8C6B),
+    'freelance': Color(0xFF2E6F9E),
+    'investments': Color(0xFF6B6394),
+    'food': Color(0xFF9A5B55),
+    'groceries': Color(0xFF6B8354),
+    'transport': Color(0xFFA8743E),
+    'shopping': Color(0xFF4A6D8C),
+    'bills': Color(0xFF4E7F86),
+    'utilities': Color(0xFF4E7F86),
+    'entertainment': Color(0xFF8B5E83),
+    'health': Color(0xFF3F8177),
+    'education': Color(0xFF3D6F94),
+    'travel': Color(0xFF95627A),
+    'subscriptions': Color(0xFF75689B),
+    'rent': Color(0xFF8F5F59),
+    'housing': Color(0xFF8F5F59),
+    'coffee': Color(0xFF8A7050),
+    'other': Color(0xFF5C6B7A),
   };
 
   static const _categoryIcons = <String, IconData>{
@@ -245,18 +249,23 @@ class GlassBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final g = context.glass;
 
+    // Muted, but not flat. Frosted glass only reads when there is tonal
+    // variation behind it to displace; a uniform near-white backdrop turns
+    // every panel into a plain white rectangle no matter how much blur is
+    // applied. These are desaturated slates and sands rather than the earlier
+    // violet/cyan/pink set, which was doing decoration rather than work.
     final pools = g.isDark
         ? const [
-            _Pool(color: Color(0xFF6D5DF6), size: 420, strength: 0.42, top: -140, left: -110),
-            _Pool(color: Color(0xFF22D3EE), size: 380, strength: 0.28, top: 40, right: -160),
-            _Pool(color: Color(0xFFF471B5), size: 400, strength: 0.22, bottom: 120, left: -140),
-            _Pool(color: Color(0xFF34D399), size: 360, strength: 0.20, bottom: -170, right: -80),
+            _Pool(color: Color(0xFF2B3550), size: 480, strength: 0.75, top: -180, left: -120),
+            _Pool(color: Color(0xFF23424A), size: 420, strength: 0.55, top: 60, right: -180),
+            _Pool(color: Color(0xFF3A2F45), size: 420, strength: 0.45, bottom: 140, left: -160),
+            _Pool(color: Color(0xFF1C2430), size: 380, strength: 0.60, bottom: -180, right: -90),
           ]
         : const [
-            _Pool(color: Color(0xFFFFFFFF), size: 460, strength: 0.95, top: -170, left: -40),
-            _Pool(color: Color(0xFF7FB5DC), size: 400, strength: 0.55, top: -80, right: -150),
-            _Pool(color: Color(0xFFBFD9F0), size: 380, strength: 0.45, bottom: 180, left: -150),
-            _Pool(color: Color(0xFFD7DCFB), size: 340, strength: 0.40, bottom: -140, right: -70),
+            _Pool(color: Color(0xFFFFFFFF), size: 520, strength: 1.0, top: -220, left: -60),
+            _Pool(color: Color(0xFF9AA8BE), size: 430, strength: 0.55, top: -40, right: -170),
+            _Pool(color: Color(0xFFCFC6B6), size: 400, strength: 0.42, bottom: 200, left: -170),
+            _Pool(color: Color(0xFFB4B0C6), size: 380, strength: 0.38, bottom: -150, right: -80),
           ];
 
     return DecoratedBox(
@@ -362,11 +371,11 @@ class GlassPanel extends StatelessWidget {
 
     final fills = t == null
         ? (g.isDark
-            ? [Colors.white.withValues(alpha: 0.11), Colors.white.withValues(alpha: 0.07)]
-            : [Colors.white.withValues(alpha: 0.88), Colors.white.withValues(alpha: 0.68)])
+            ? [Colors.white.withValues(alpha: 0.10), Colors.white.withValues(alpha: 0.05)]
+            : [Colors.white.withValues(alpha: 0.62), Colors.white.withValues(alpha: 0.40)])
         : (g.isDark
-            ? [t.withValues(alpha: 0.26), t.withValues(alpha: 0.08)]
-            : [t.withValues(alpha: 0.16), Colors.white.withValues(alpha: 0.72)]);
+            ? [t.withValues(alpha: 0.18), Colors.white.withValues(alpha: 0.05)]
+            : [t.withValues(alpha: 0.10), Colors.white.withValues(alpha: 0.44)]);
 
     Widget surface = DecoratedBox(
       decoration: BoxDecoration(
@@ -376,30 +385,62 @@ class GlassPanel extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: fills,
         ),
-        border: Border.all(
-          color: t == null || g.isDark ? g.stroke : t.withValues(alpha: 0.28),
-        ),
+        border: Border.all(color: g.stroke, width: 0.8),
       ),
       child: Padding(padding: padding, child: child),
     );
 
     if (blurred) {
       surface = BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: surface,
       );
     }
 
-    Widget panel = ClipRRect(borderRadius: border, child: surface);
+    Widget panel = ClipRRect(
+      borderRadius: border,
+      child: Stack(
+        children: [
+          surface,
+          // The specular edge. A pane of glass catches light along its top
+          // rim, and this single hairline does more to sell the material than
+          // any amount of blur — without it a frosted panel reads as flat fill.
+          Positioned(
+            top: 0,
+            left: radius * 0.6,
+            right: radius * 0.6,
+            child: IgnorePointer(
+              child: Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0),
+                      Colors.white.withValues(alpha: g.isDark ? 0.34 : 0.95),
+                      Colors.white.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
-    // In light mode the panel and the sky are both nearly white, so the shadow
-    // is the only thing that separates them. In dark mode the stroke does it.
+    // In light mode the panel and the backdrop are both pale, so the shadow is
+    // what separates them. In dark mode the stroke does that job.
     if (elevated && !g.isDark) {
       panel = DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: border,
           boxShadow: [
-            BoxShadow(color: g.shadow, blurRadius: 24, offset: const Offset(0, 8)),
+            BoxShadow(color: g.shadow, blurRadius: 30, offset: const Offset(0, 10)),
+            BoxShadow(
+              color: g.shadow.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
           ],
         ),
         child: panel,
@@ -498,6 +539,12 @@ class GlassChip extends StatelessWidget {
 
 /// Rounded category glyph. Makes a transaction list scannable without reading
 /// a word of it.
+/// Rounded category glyph.
+///
+/// Neutral by design. The previous version gave every category its own
+/// saturated hue, which made a transaction list read like a set of highlighter
+/// pens. Shape and label carry the identity; colour is reserved for the charts,
+/// where it actually encodes a value.
 class CategoryGlyph extends StatelessWidget {
   const CategoryGlyph({super.key, required this.categoryId, this.size = 42});
 
@@ -507,28 +554,24 @@ class CategoryGlyph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
-    final tone = g.categoryColor(categoryId);
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.32),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: g.isDark
-              ? [tone.withValues(alpha: 0.36), tone.withValues(alpha: 0.14)]
-              : [tone.withValues(alpha: 0.20), tone.withValues(alpha: 0.09)],
-        ),
+        borderRadius: BorderRadius.circular(size * 0.30),
+        color: g.isDark
+            ? Colors.white.withValues(alpha: 0.07)
+            : Colors.white.withValues(alpha: 0.70),
         border: Border.all(
-          color: tone.withValues(alpha: g.isDark ? 0.34 : 0.22),
+          color: g.isDark ? g.stroke : Colors.white.withValues(alpha: 0.9),
+          width: 0.8,
         ),
       ),
       child: Icon(
         GlassPalette.categoryIcon(categoryId),
-        size: size * 0.46,
-        color: tone,
+        size: size * 0.44,
+        color: g.textSecondary,
       ),
     );
   }

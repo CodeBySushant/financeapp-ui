@@ -12,6 +12,7 @@ class ProfileScreen extends StatelessWidget {
     required this.user,
     required this.onEditName,
     required this.onNotImplemented,
+    required this.onBack,
   });
 
   /// Null until someone has identified themselves.
@@ -19,12 +20,17 @@ class ProfileScreen extends StatelessWidget {
   final VoidCallback onEditName;
   final ValueChanged<String> onNotImplemented;
 
+  /// Profile is no longer a bar destination, so it carries its own way out.
+  final VoidCallback onBack;
+
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
     return CustomScrollView(
       slivers: [
-        const SliverToBoxAdapter(child: ScreenHeader(title: 'Profile')),
+        SliverToBoxAdapter(
+          child: ScreenHeader(title: 'Profile', onBack: onBack),
+        ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,

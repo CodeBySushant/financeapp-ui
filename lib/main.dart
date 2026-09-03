@@ -116,9 +116,11 @@ class _RootShellState extends State<RootShell> {
   }
 
   void _go(int index) {
-    // Guard rather than trust: an index that outruns the destination list is
-    // exactly the bug this navigation replaced.
-    if (index < 0 || index >= shellDestinations.length) return;
+    // Guard against the screen count, not the destination count: Profile is a
+    // screen without a bar slot, so those two numbers are deliberately
+    // different now. Using the wrong one is how the original RangeError
+    // happened.
+    if (index < 0 || index >= kScreenCount) return;
     setState(() => _index = index);
   }
 
@@ -161,7 +163,7 @@ class _RootShellState extends State<RootShell> {
             onOpenBudgets: () => _go(2),
             onOpenTransactions: () => _go(1),
             onOpenGoals: () => _go(3),
-            onOpenProfile: () => _go(4),
+            onOpenProfile: () => _go(kProfileIndex),
           ),
           ActivityScreen(onAdd: _add),
           const InsightsScreen(),
@@ -173,6 +175,7 @@ class _RootShellState extends State<RootShell> {
             user: user,
             onEditName: _askForName,
             onNotImplemented: _soon,
+            onBack: () => _go(0),
           ),
         ],
       ),

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
@@ -8,8 +6,12 @@ import '../../../core/theme/glass.dart';
 import '../../../core/utils/money.dart';
 import '../domain/home_summary.dart';
 
-/// The dashboard. Answers one question above the fold: am I on track this
-/// month? Everything below it is supporting detail.
+/// The dashboard.
+///
+/// Answers one question above the fold — am I on track this month — and treats
+/// everything below it as supporting detail. Colour appears in exactly three
+/// places: the accent on an action, green on money coming in, red when a budget
+/// is blown. Everything else is neutral.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
@@ -37,14 +39,13 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final g = context.glass;
     final s = summary;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
-      backgroundColor: const Color(0xFF141B2E),
-      color: g.accentAlt,
-      edgeOffset: 90,
+      backgroundColor: context.glass.canvasBottom,
+      color: context.glass.accent,
+      edgeOffset: 100,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -53,25 +54,25 @@ class HomeScreen extends StatelessWidget {
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
+              AppSpacing.xl,
               0,
-              AppSpacing.lg,
-              140,
+              AppSpacing.xl,
+              150,
             ),
             sliver: s == null
                 ? const SliverToBoxAdapter(child: _LoadingBody())
                 : SliverList.list(
                     children: [
                       _BalanceHero(summary: s),
-                      const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.md),
                       _BudgetCard(summary: s, onTap: onOpenBudgets),
-                      const SizedBox(height: AppSpacing.xxl),
+                      const SizedBox(height: AppSpacing.huge),
                       _QuickAdd(onPick: onQuickAdd),
-                      const SizedBox(height: AppSpacing.xxl),
                       if (s.insight != null) ...[
+                        const SizedBox(height: AppSpacing.huge),
                         _InsightCard(insight: s.insight!),
-                        const SizedBox(height: AppSpacing.xxl),
                       ],
+                      const SizedBox(height: AppSpacing.huge),
                       SectionHeading(
                         title: 'Where it went',
                         actionLabel: 'All activity',
@@ -85,11 +86,8 @@ class HomeScreen extends StatelessWidget {
                               'Add your first expense and this fills in on its own.',
                         )
                       else
-                        _CategoryList(
-                          categories: s.topCategories,
-                          total: s.monthExpenses,
-                        ),
-                      const SizedBox(height: AppSpacing.xxl),
+                        _CategoryList(categories: s.topCategories),
+                      const SizedBox(height: AppSpacing.huge),
                       SectionHeading(
                         title: 'Goals',
                         actionLabel: s.goals.isEmpty ? null : 'See all',
@@ -107,8 +105,7 @@ class HomeScreen extends StatelessWidget {
                       else
                         for (final g in s.goals)
                           Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: AppSpacing.md),
+                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
                             child: _GoalCard(goal: g),
                           ),
                     ],
@@ -142,10 +139,10 @@ class _Greeting extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        top + AppSpacing.lg,
-        AppSpacing.lg,
         AppSpacing.xl,
+        top + AppSpacing.xxl,
+        AppSpacing.xl,
+        AppSpacing.xxl,
       ),
       child: Row(
         children: [
@@ -156,59 +153,60 @@ class _Greeting extends StatelessWidget {
                 Text(
                   known ? _partOfDay : 'Welcome',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 13.5,
+                    letterSpacing: -0.1,
                     color: g.textMuted,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
-                  // Until someone signs in there is no name to show, so the
-                  // greeting says something true instead of inventing one.
                   known ? who : 'Set up your profile',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 23,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
+                    fontSize: 27,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.8,
+                    height: 1.1,
                     color: g.text,
                   ),
                 ),
               ],
             ),
           ),
-          GestureDetector(
-            onTap: onOpenProfile,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: known
-                    ? LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [g.accent, g.accentAlt],
-                      )
-                    : null,
-                color: known ? null : g.strokeSoft,
-                border: Border.all(color: g.stroke),
-              ),
-              child: Center(
-                child: known
-                    ? Text(
-                        who.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+          const SizedBox(width: AppSpacing.md),
+          Semantics(
+            button: true,
+            label: 'Profile',
+            child: GestureDetector(
+              onTap: onOpenProfile,
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: g.isDark
+                      ? Colors.white.withValues(alpha: 0.10)
+                      : Colors.white.withValues(alpha: 0.78),
+                  border: Border.all(color: g.stroke, width: 0.8),
+                ),
+                child: Center(
+                  child: known
+                      ? Text(
+                          who.substring(0, 1).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                            color: g.text,
+                          ),
+                        )
+                      : Icon(
+                          Icons.person_outline_rounded,
+                          size: 20,
+                          color: g.textSecondary,
                         ),
-                      )
-                    : Icon(
-                        Icons.person_outline_rounded,
-                        size: 20,
-                        color: g.textSecondary,
-                      ),
+                ),
               ),
             ),
           ),
@@ -218,7 +216,7 @@ class _Greeting extends StatelessWidget {
   }
 }
 
-/// The one genuinely blurred, genuinely bold surface in the app.
+/// The one figure that matters, given the room to matter.
 class _BalanceHero extends StatelessWidget {
   const _BalanceHero({required this.summary});
 
@@ -228,166 +226,115 @@ class _BalanceHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final g = context.glass;
     final text = context.text;
-    final radius = BorderRadius.circular(28);
 
-    // Dark carries a saturated violet wash; light keeps the panel near-white
-    // with only a hint of it, so the hero stays airy against the pale sky
-    // instead of stamping a heavy block onto it.
-    final hero = ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: g.isDark
-                  ? [
-                      g.accent.withValues(alpha: 0.30),
-                      g.accentAlt.withValues(alpha: 0.12),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.92),
-                      g.accent.withValues(alpha: 0.10),
-                    ],
-            ),
-            border: Border.all(color: g.stroke),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return GlassPanel(
+      blurred: true,
+      radius: 26,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxl,
+        AppSpacing.xxl,
+        AppSpacing.xxl,
+        AppSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Text(
-                    'Available balance',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: g.textSecondary,
-                    ),
-                  ),
-                  const Spacer(),
-                  GlassChip(label: summary.periodLabel, tone: g.accentAlt),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
+              Expanded(
                 child: Text(
-                  summary.availableBalance.format(),
-                  style: text.moneyXl.copyWith(
-                    color: g.text,
-                    fontSize: 42,
-                    height: 1.05,
+                  'Available balance',
+                  style: TextStyle(
+                    fontSize: 13,
+                    letterSpacing: -0.1,
+                    color: g.textMuted,
                   ),
-                  semanticsLabel:
-                      summary.availableBalance.semanticLabel(),
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
-              Row(
-                children: [
-                  Expanded(
-                    child: _Flow(
-                      icon: Icons.south_west_rounded,
-                      label: 'In',
-                      amount: summary.monthIncome,
-                      tone: g.success,
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 34,
-                    color: g.isDark ? g.stroke : g.strokeSoft,
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                    ),
-                  ),
-                  Expanded(
-                    child: _Flow(
-                      icon: Icons.north_east_rounded,
-                      label: 'Out',
-                      amount: summary.monthExpenses,
-                      tone: g.danger,
-                    ),
-                  ),
-                ],
+              Text(
+                summary.periodLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.1,
+                  color: g.textMuted,
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-
-    if (g.isDark) return hero;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: [
-          BoxShadow(color: g.shadow, blurRadius: 30, offset: const Offset(0, 12)),
+          const SizedBox(height: AppSpacing.md),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              summary.availableBalance.format(),
+              style: text.moneyXl.copyWith(color: g.text),
+              semanticsLabel: summary.availableBalance.semanticLabel(),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Divider(height: 1, thickness: 1, color: g.strokeSoft),
+          _Flow(
+            label: 'Income',
+            amount: summary.monthIncome,
+            positive: true,
+          ),
+          Divider(height: 1, thickness: 1, color: g.strokeSoft),
+          _Flow(
+            label: 'Spent',
+            amount: summary.monthExpenses,
+            positive: false,
+          ),
         ],
       ),
-      child: hero,
     );
   }
 }
 
 class _Flow extends StatelessWidget {
   const _Flow({
-    required this.icon,
     required this.label,
     required this.amount,
-    required this.tone,
+    required this.positive,
   });
 
-  final IconData icon;
   final String label;
   final Money amount;
-  final Color tone;
+  final bool positive;
 
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
-    return Row(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: tone.withValues(alpha: 0.18),
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Row(
+        children: [
+          Icon(
+            positive ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+            size: 15,
+            // Green earns its place: money arriving is the one genuinely good
+            // event on this screen. Money leaving is normal, so it stays neutral
+            // rather than being painted as an alarm.
+            color: positive ? g.success : g.textMuted,
           ),
-          child: Icon(icon, size: 15, color: tone),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: 11, color: g.textMuted),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                letterSpacing: -0.15,
+                color: g.textSecondary,
               ),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  amount.format(compact: true),
-                  style: context.text.moneySm.copyWith(
-                    color: g.text,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+          Text(
+            amount.format(),
+            style: context.text.moneyMd.copyWith(color: g.text),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -405,12 +352,10 @@ class _BudgetCard extends StatelessWidget {
 
     if (budget == null) {
       return GlassPanel(
+        blurred: true,
         onTap: onTap,
         child: Row(
           children: [
-            Icon(Icons.pie_chart_outline_rounded,
-                color: g.accentAlt, size: 22),
-            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,74 +363,82 @@ class _BudgetCard extends StatelessWidget {
                   Text(
                     'Set a monthly budget',
                     style: TextStyle(
-                      fontSize: 14.5,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
                       color: g.text,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     'You get a daily safe-spend figure once you do.',
-                    style: TextStyle(fontSize: 12.5, color: g.textMuted),
+                    style: TextStyle(fontSize: 13, color: g.textMuted),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: g.textMuted),
+            Icon(Icons.chevron_right_rounded, color: g.textMuted, size: 20),
           ],
         ),
       );
     }
 
     final fraction = summary.budgetFraction;
-    final tone = g.budgetTone(fraction);
+    final over = summary.isOverBudget;
     final daily = summary.safeDailySpend;
+    // Neutral until it matters. An amber bar at 76% trains people to ignore it.
+    final tone = over ? g.danger : g.textSecondary;
 
     return GlassPanel(
+      blurred: true,
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                'Monthly budget',
-                style: TextStyle(fontSize: 13, color: g.textSecondary),
+              Expanded(
+                child: Text(
+                  'Monthly budget',
+                  style: TextStyle(
+                    fontSize: 13,
+                    letterSpacing: -0.1,
+                    color: g.textMuted,
+                  ),
+                ),
               ),
-              const Spacer(),
               Text(
-                '${(fraction * 100).round()}% used',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: tone,
+                '${(fraction * 100).round()}%',
+                style: context.text.numMeta.copyWith(
+                  color: over ? g.danger : g.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          GlassBar(fraction: fraction, tone: tone),
+          GlassBar(fraction: fraction, tone: tone, height: 5),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  summary.isOverBudget
+                  over
                       ? 'Over by ${(summary.monthExpenses - budget).format()}'
                       : '${summary.budgetRemaining!.format()} left of ${budget.format()}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12.5,
-                    color: g.textMuted,
+                    fontSize: 13,
+                    letterSpacing: -0.1,
+                    color: over ? g.danger : g.textSecondary,
                   ),
                 ),
               ),
               if (daily != null)
                 Text(
-                  '${daily.format()}/day',
-                  style: context.text.numMeta.copyWith(
-                    color: g.textSecondary,
-                    fontSize: 12.5,
-                  ),
+                  '${daily.format()} a day',
+                  style: TextStyle(fontSize: 13, color: g.textMuted),
                 ),
             ],
           ),
@@ -511,23 +464,24 @@ class _QuickAdd extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeading(title: 'Log a spend'),
         SizedBox(
-          height: 84,
+          height: 82,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             itemCount: _picks.length,
-            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.lg),
             itemBuilder: (context, i) {
               final (id, label) = _picks[i];
               return GestureDetector(
                 onTap: () => onPick(id),
                 child: SizedBox(
-                  width: 66,
+                  width: 62,
                   child: Column(
                     children: [
                       CategoryGlyph(categoryId: id, size: 50),
@@ -538,7 +492,8 @@ class _QuickAdd extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11.5,
-                          color: g.textSecondary,
+                          letterSpacing: -0.1,
+                          color: g.textMuted,
                         ),
                       ),
                     ],
@@ -561,47 +516,40 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
+
     return GlassPanel(
-      tint: g.accent,
+      blurred: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.auto_awesome_rounded,
-                  size: 16, color: g.text),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                'Pattern spotted',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: g.textMuted,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
           Text(
             insight.body,
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.45,
-              color: g.text,
-            ),
+            style: context.text.voice.copyWith(color: g.text),
           ),
           if (insight.figures.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             // The figures the sentence was built from. An insight you cannot
             // audit is a claim, not an insight.
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final f in insight.figures)
-                  GlassChip(label: '${f.label} ${f.value.format()}'),
-              ],
-            ),
+            for (final f in insight.figures)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        f.label,
+                        style: TextStyle(fontSize: 13, color: g.textMuted),
+                      ),
+                    ),
+                    Text(
+                      f.value.format(),
+                      style: context.text.numMeta.copyWith(
+                        color: g.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ],
       ),
@@ -610,26 +558,22 @@ class _InsightCard extends StatelessWidget {
 }
 
 class _CategoryList extends StatelessWidget {
-  const _CategoryList({required this.categories, required this.total});
+  const _CategoryList({required this.categories});
 
   final List<CategoryTotal> categories;
-  final Money total;
 
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
+
     return GlassPanel(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Column(
         children: [
           for (var i = 0; i < categories.length; i++) ...[
             if (i > 0)
-              Divider(
-                height: 1,
-                indent: AppSpacing.xxl + AppSpacing.xxxl,
-                color: g.strokeSoft,
-              ),
-            _CategoryRow(item: categories[i], total: total),
+              Divider(height: 1, indent: 74, color: g.strokeSoft),
+            _CategoryRow(item: categories[i]),
           ],
         ],
       ),
@@ -638,16 +582,14 @@ class _CategoryList extends StatelessWidget {
 }
 
 class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({required this.item, required this.total});
+  const _CategoryRow({required this.item});
 
   final CategoryTotal item;
-  final Money total;
 
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
     final change = item.percentChange;
-    final share = total.isZero ? 0.0 : item.total.ratioOf(total);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -656,48 +598,34 @@ class _CategoryRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CategoryGlyph(categoryId: item.categoryId),
+          CategoryGlyph(categoryId: item.categoryId, size: 40),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.label,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w500,
-                    color: g.text,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                GlassBar(
-                  fraction: share,
-                  tone: g.categoryColor(item.categoryId),
-                  height: 4,
-                ),
-              ],
+            child: Text(
+              item.label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.2,
+                color: g.text,
+              ),
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 item.total.format(),
-                style: context.text.moneySm.copyWith(
-                  color: g.text,
-                  fontSize: 14,
-                ),
+                style: context.text.moneyMd.copyWith(color: g.text),
               ),
               if (change != null) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   '${change > 0 ? '+' : ''}$change%',
                   style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: change > 0 ? g.danger : g.success,
+                    fontSize: 12,
+                    letterSpacing: -0.1,
+                    color: g.textMuted,
                   ),
                 ),
               ],
@@ -717,44 +645,36 @@ class _GoalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
+
     return GlassPanel(
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GlassRing(
-            fraction: goal.fraction,
-            tone: g.success,
-            child: Text(
-              '${goal.percent}%',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: g.text,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            children: [
+              Expanded(
+                child: Text(
                   goal.name,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 15.5,
                     fontWeight: FontWeight.w600,
+                    letterSpacing: -0.25,
                     color: g.text,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${goal.saved.format(compact: true)} of ${goal.target.format(compact: true)}',
-                  style: context.text.numMeta.copyWith(
-                    fontSize: 12.5,
-                    color: g.textMuted,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              Text(
+                '${goal.percent}%',
+                style: context.text.numMeta.copyWith(color: g.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          GlassBar(fraction: goal.fraction, tone: g.textSecondary, height: 5),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            '${goal.saved.format()} of ${goal.target.format()}',
+            style: TextStyle(fontSize: 13, color: g.textMuted),
           ),
         ],
       ),
@@ -769,10 +689,10 @@ class _LoadingBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Column(
       children: [
-        GlassSkeleton(height: 196),
-        SizedBox(height: AppSpacing.lg),
-        GlassSkeleton(height: 108),
-        SizedBox(height: AppSpacing.lg),
+        GlassSkeleton(height: 232),
+        SizedBox(height: AppSpacing.md),
+        GlassSkeleton(height: 116),
+        SizedBox(height: AppSpacing.huge),
         GlassSkeleton(height: 140),
       ],
     );
