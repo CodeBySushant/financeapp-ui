@@ -1,183 +1,246 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/glass.dart';
-import '../../../core/utils/money.dart';
 import '../../../core/widgets/screen_header.dart';
-import '../../../dev/preview_extras.dart';
+import '../../transactions/application/transactions_provider.dart';
+import '../../transactions/data/transactions_repository.dart';
+import '../../transactions/domain/transaction.dart';
 
 /// Every transaction, newest first, grouped by day.
-class ActivityScreen extends StatefulWidget {
+class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key, required this.onAdd});
 
   final VoidCallback onAdd;
 
   @override
-  State<ActivityScreen> createState() => _ActivityScreenState();
+  ConsumerState<ActivityScreen> createState() => _ActivityScreenState();
 }
 
-class _ActivityScreenState extends State<ActivityScreen> {
-  static const _filters = ['All', 'Spending', 'Income'];
-  int _filter = 0;
-  String _query = '';
+class _ActivityScreenState extends ConsumerState<ActivityScreen> {
+  final _scroll = ScrollController();
+  final _search = TextEditingController();
 
-  List<PreviewTx> get _visible {
-    final all = PreviewExtras.transactions();
-    final q = _query.trim().toLowerCase();
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_maybeLoadMore);
+  }
 
-    return all.where((t) {
-      final matchesFilter = switch (_filter) {
-        1 => !t.isIncome,
-        2 => t.isIncome,
-        _ => true,
-      };
-      if (!matchesFilter) return false;
-      if (q.isEmpty) return true;
-      return t.merchant.toLowerCase().contains(q) ||
-          t.categoryLabel.toLowerCase().contains(q);
-    }).toList()
-      ..sort((a, b) => b.at.compareTo(a.at));
+  @override
+  void dispose() {
+    _scroll.removeListener(_maybeLoadMore);
+    _scroll.dispose();
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _maybeLoadMore() {
+    if (!_scroll.hasClients) return;
+    final remaining = _scroll.position.maxScrollExtent - _scroll.position.pixels;
+    // Fetch before the user reaches the end, so the next page is usually there
+    // by the time they get to it.
+    if (remaining < 600) {
+      ref.read(transactionsProvider.notifier).loadMore();
+    }
+  }
+
+  Future<void> _delete(Transaction tx) async {
+    final message = await ref.read(transactionsProvider.notifier).delete(tx);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(content: Text(message ?? 'Deleted ${tx.amount.format()}')),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
-    final items = _visible;
-    final groups = <String, List<PreviewTx>>{};
-    for (final t in items) {
-      groups.putIfAbsent(_dayLabel(t.at), () => []).add(t);
+    final state = ref.watch(transactionsProvider);
+    final controller = ref.read(transactionsProvider.notifier);
+
+    final groups = <String, List<Transaction>>{};
+    for (final t in state.items) {
+      groups.putIfAbsent(_dayLabel(t.transactionDate), () => []).add(t);
     }
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: ScreenHeader(
-            title: 'Activity',
-            subtitle: '${items.length} transactions',
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      backgroundColor: g.canvasBottom,
+      color: g.accent,
+      edgeOffset: 100,
+      child: CustomScrollView(
+        controller: _scroll,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: ScreenHeader(
+              title: 'Activity',
+              subtitle: state.loading
+                  ? 'Loading…'
+                  : '${state.items.length}${state.hasMore ? '+' : ''} transactions',
+            ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Column(
-              children: [
-                TextField(
-                  onChanged: (v) => setState(() => _query = v),
-                  style: TextStyle(
-                    color: g.text,
-                    fontSize: 14.5,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search merchant or category',
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      size: 20,
-                      color: g.textMuted,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    for (var i = 0; i < _filters.length; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.sm),
-                        child: GlassChip(
-                          label: _filters[i],
-                          selected: i == _filter,
-                          tone: g.accentAlt,
-                          onTap: () => setState(() => _filter = i),
-                        ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _search,
+                    onSubmitted: (v) => controller
+                        .setFilters(state.filters.copyWith(search: v)),
+                    textInputAction: TextInputAction.search,
+                    style: TextStyle(color: g.text, fontSize: 14.5),
+                    decoration: InputDecoration(
+                      hintText: 'Search merchant or note',
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: g.textMuted,
                       ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
-              ],
-            ),
-          ),
-        ),
-        if (items.isEmpty)
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.xxl,
-              AppSpacing.lg,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: GlassEmpty(
-                icon: Icons.search_off_rounded,
-                title: 'Nothing matches',
-                body: 'Try a different search, or clear the filter.',
-                actionLabel: 'Add a transaction',
-                onAction: widget.onAdd,
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              140,
-            ),
-            sliver: SliverList.list(
-              children: [
-                for (final entry in groups.entries) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.xs,
-                      AppSpacing.sm,
-                      AppSpacing.xs,
-                      AppSpacing.md,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          entry.key,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: g.textMuted,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          _dayTotal(entry.value),
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: g.textMuted,
-                          ),
-                        ),
-                      ],
+                      suffixIcon: _search.text.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: Icon(
+                                Icons.close_rounded,
+                                size: 18,
+                                color: g.textMuted,
+                              ),
+                              onPressed: () {
+                                _search.clear();
+                                controller.setFilters(
+                                  state.filters.copyWith(search: null),
+                                );
+                              },
+                            ),
                     ),
                   ),
-                  GlassPanel(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < entry.value.length; i++) ...[
-                          if (i > 0)
-                            Divider(
-                              height: 1,
-                              indent: 70,
-                              color: g.strokeSoft,
-                            ),
-                          _TxRow(tx: entry.value[i]),
-                        ],
-                      ],
-                    ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        selected: state.filters.type == null,
+                        onTap: () => controller
+                            .setFilters(state.filters.copyWith(type: null)),
+                      ),
+                      for (final t in TxType.values)
+                        _FilterChip(
+                          label: t.label,
+                          selected: state.filters.type == t,
+                          onTap: () => controller
+                              .setFilters(state.filters.copyWith(type: t)),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
-              ],
+              ),
             ),
           ),
-      ],
+
+          if (state.loading)
+            const SliverToBoxAdapter(child: _ListSkeleton())
+          else if (state.error != null)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              sliver: SliverToBoxAdapter(
+                child: GlassEmpty(
+                  icon: Icons.cloud_off_rounded,
+                  title: 'Could not load your activity',
+                  body: state.error!,
+                  actionLabel: 'Try again',
+                  onAction: controller.refresh,
+                ),
+              ),
+            )
+          else if (state.isEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              sliver: SliverToBoxAdapter(
+                child: GlassEmpty(
+                  icon: Icons.receipt_long_rounded,
+                  title: 'Nothing here yet',
+                  body: 'Add a transaction and it will show up right away.',
+                  actionLabel: 'Add a transaction',
+                  onAction: widget.onAdd,
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                0,
+                AppSpacing.xl,
+                150,
+              ),
+              sliver: SliverList.list(
+                children: [
+                  for (final entry in groups.entries) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xs,
+                        AppSpacing.sm,
+                        AppSpacing.xs,
+                        AppSpacing.md,
+                      ),
+                      child: Text(
+                        entry.key,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: g.textMuted,
+                        ),
+                      ),
+                    ),
+                    GlassPanel(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < entry.value.length; i++) ...[
+                            if (i > 0)
+                              Divider(
+                                height: 1,
+                                indent: 70,
+                                color: g.strokeSoft,
+                              ),
+                            _TxRow(
+                              tx: entry.value[i],
+                              onDelete: () => _delete(entry.value[i]),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
+                  if (state.loadingMore)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: g.textMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -196,73 +259,140 @@ class _ActivityScreenState extends State<ActivityScreen> {
     ];
     return '${at.day} ${months[at.month - 1]}';
   }
+}
 
-  static String _dayTotal(List<PreviewTx> txs) {
-    var net = 0;
-    for (final t in txs) {
-      net += t.isIncome ? t.amount.minor : -t.amount.minor;
-    }
-    final money = Money.fromMinor(net.abs(), 'INR');
-    return '${net >= 0 ? '+' : '-'}${money.format()}';
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: GlassChip(
+        label: label,
+        selected: selected,
+        tone: context.glass.accent,
+        onTap: onTap,
+      ),
+    );
   }
 }
 
 class _TxRow extends StatelessWidget {
-  const _TxRow({required this.tx});
+  const _TxRow({required this.tx, required this.onDelete});
 
-  final PreviewTx tx;
+  final Transaction tx;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
-    final tone = tx.isIncome ? g.success : g.text;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+    return Dismissible(
+      key: ValueKey(tx.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('Delete this transaction?'),
+                content: Text(
+                  '${tx.title} · ${tx.amount.format()}. '
+                  'Account balances will be adjusted.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+      },
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.xl),
+        color: g.danger.withValues(alpha: 0.16),
+        child: Icon(Icons.delete_outline_rounded, color: g.danger, size: 20),
       ),
-      child: Row(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            CategoryGlyph(categoryId: tx.categorySlug ?? 'other', size: 40),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tx.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: -0.2,
+                      color: g.text,
+                    ),
+                  ),
+                  if (tx.subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      tx.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12.5, color: g.textMuted),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              '${tx.isIncome ? '+' : tx.isTransfer ? '' : '\u2212'}${tx.amount.format()}',
+              style: context.text.moneyMd.copyWith(
+                color: tx.isIncome ? g.success : g.text,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ListSkeleton extends StatelessWidget {
+  const _ListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      child: Column(
         children: [
-          CategoryGlyph(categoryId: tx.categoryId),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tx.merchant,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w500,
-                    color: g.text,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tx.note == null
-                      ? tx.categoryLabel
-                      : '${tx.categoryLabel} · ${tx.note}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: g.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            '${tx.isIncome ? '+' : '−'}${tx.amount.format()}',
-            style: context.text.moneySm.copyWith(
-              fontSize: 14.5,
-              color: tone,
-            ),
-          ),
+          GlassSkeleton(height: 92),
+          SizedBox(height: AppSpacing.lg),
+          GlassSkeleton(height: 150),
+          SizedBox(height: AppSpacing.lg),
+          GlassSkeleton(height: 120),
         ],
       ),
     );

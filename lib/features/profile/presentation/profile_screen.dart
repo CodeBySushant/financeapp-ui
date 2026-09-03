@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/session/app_user.dart';
+import '../../../core/session/auth_controller.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/glass.dart';
+import '../../../core/security/app_lock.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../core/widgets/glass_route.dart';
+import '../../accounts/presentation/accounts_screen.dart';
+import '../../assistant/presentation/assistant_screen.dart';
 import '../../../core/widgets/screen_header.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({
     super.key,
-    required this.user,
-    required this.onEditName,
     required this.onNotImplemented,
     required this.onBack,
   });
 
-  /// Null until someone has identified themselves.
-  final AppUser? user;
-  final VoidCallback onEditName;
   final ValueChanged<String> onNotImplemented;
 
   /// Profile is no longer a bar destination, so it carries its own way out.
@@ -42,7 +42,6 @@ class ProfileScreen extends StatelessWidget {
             children: [
               GlassPanel(
                 blurred: true,
-                onTap: onEditName,
                 child: Row(
                   children: [
                     Container(
@@ -82,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user?.name ?? 'Add your name',
+                            user?.displayName ?? 'Signed in',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -94,8 +93,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            user?.email ??
-                                'Saved on this device until sign-in exists',
+                            user?.email ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -106,11 +104,7 @@ class ProfileScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.edit_outlined,
-                      size: 18,
-                      color: g.textMuted,
-                    ),
+
                   ],
                 ),
               ),
@@ -125,20 +119,30 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () => onNotImplemented('Currency'),
                   ),
                   _Item(
-                    icon: Icons.pie_chart_outline_rounded,
-                    label: 'Budgets',
-                    onTap: () => onNotImplemented('Budget settings'),
-                  ),
-                  _Item(
                     icon: Icons.account_balance_wallet_outlined,
                     label: 'Accounts',
-                    onTap: () => onNotImplemented('Accounts'),
+                    onTap: () => Navigator.of(context)
+                        .push(glassRoute(const AccountsScreen())),
+                  ),
+                  _Item(
+                    icon: Icons.auto_awesome_outlined,
+                    label: 'Ask my money',
+                    onTap: () => Navigator.of(context).push(
+                      glassRoute(
+                        AssistantScreen(
+                          onBack: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.xxl),
               const SectionHeading(title: 'Appearance'),
               const _ThemePicker(),
+              const SizedBox(height: AppSpacing.xxl),
+              const SectionHeading(title: 'Security'),
+              const _AppLockTile(),
               const SizedBox(height: AppSpacing.xxl),
               const SectionHeading(title: 'App'),
               _Group(
@@ -157,6 +161,24 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.file_download_outlined,
                     label: 'Export transactions',
                     onTap: () => onNotImplemented('Export'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              const SectionHeading(title: 'Account'),
+              _Group(
+                items: [
+                  _Item(
+                    icon: Icons.logout_rounded,
+                    label: 'Sign out',
+                    onTap: () =>
+                        _confirmSignOut(context, ref, everywhere: false),
+                  ),
+                  _Item(
+                    icon: Icons.devices_rounded,
+                    label: 'Sign out on all devices',
+                    onTap: () =>
+                        _confirmSignOut(context, ref, everywhere: true),
                   ),
                 ],
               ),
@@ -338,13 +360,13 @@ class _ThemeOption extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           child: AnimatedContainer(
             duration: AppMotion.of(context, AppMotion.fast),
             curve: AppMotion.emphasized,
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.control),
               color: selected
                   ? palette.accent.withValues(alpha: palette.isDark ? 0.20 : 0.12)
                   : Colors.transparent,
@@ -369,6 +391,80 @@ class _ThemeOption extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Turns the device-credential lock on and off.
+///
+/// Hidden entirely when the device cannot authenticate, rather than shown
+/// disabled: a greyed-out switch invites a support question with no answer.
+class _AppLockTile extends ConsumerWidget {
+  const _AppLockTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final g = context.glass;
+    final lock = ref.watch(appLockProvider);
+
+    if (!lock.supported) {
+      return GlassPanel(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.lg,
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 20, color: g.textMuted),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Text(
+                'This device has no screen lock set up, so the app lock is '
+                'unavailable.',
+                style: TextStyle(fontSize: 13, height: 1.4, color: g.textMuted),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GlassPanel(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      child: SwitchListTile.adaptive(
+        contentPadding: EdgeInsets.zero,
+        value: lock.enabled,
+        onChanged: (want) async {
+          final ok = await ref.read(appLockProvider).setEnabled(want);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(
+                const SnackBar(content: Text('Could not verify. Lock unchanged.')),
+              );
+          }
+        },
+        title: Text(
+          'Require unlock',
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            color: g.text,
+          ),
+        ),
+        subtitle: Text(
+          'Ask for your fingerprint or PIN when Fintrak opens.',
+          style: TextStyle(fontSize: 12.5, color: g.textMuted),
+        ),
+        secondary: Icon(
+          Icons.fingerprint_rounded,
+          size: 20,
+          color: g.textSecondary,
         ),
       ),
     );

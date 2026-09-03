@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/glass.dart';
+import '../../../core/widgets/animated_money.dart';
 import '../../../core/utils/money.dart';
 import '../domain/home_summary.dart';
 
@@ -17,11 +18,16 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.userName,
     required this.summary,
+    required this.errorMessage,
+    required this.staleSince,
     required this.onRefresh,
+    required this.onRetry,
     required this.onOpenBudgets,
     required this.onOpenTransactions,
     required this.onOpenGoals,
     required this.onOpenProfile,
+    required this.onOpenAssistant,
+    required this.onSetBudget,
     required this.onQuickAdd,
   });
 
@@ -30,11 +36,23 @@ class HomeScreen extends StatelessWidget {
   final String? userName;
 
   final HomeSummary? summary;
+
+  /// Set when the last load failed and there was nothing cached to fall back on.
+  final String? errorMessage;
+
+  /// When the figures on screen came from cache because the network was
+  /// unreachable. A finance dashboard showing stale numbers silently is worse
+  /// than one that admits it.
+  final DateTime? staleSince;
+
   final Future<void> Function() onRefresh;
+  final VoidCallback onRetry;
   final VoidCallback onOpenBudgets;
   final VoidCallback onOpenTransactions;
   final VoidCallback onOpenGoals;
   final VoidCallback onOpenProfile;
+  final VoidCallback onOpenAssistant;
+  final VoidCallback onSetBudget;
   final ValueChanged<String> onQuickAdd;
 
   @override
@@ -60,18 +78,32 @@ class HomeScreen extends StatelessWidget {
               150,
             ),
             sliver: s == null
-                ? const SliverToBoxAdapter(child: _LoadingBody())
+                ? SliverToBoxAdapter(
+                    child: errorMessage == null
+                        ? const _LoadingBody()
+                        : _ErrorBody(message: errorMessage!, onRetry: onRetry),
+                  )
                 : SliverList.list(
                     children: [
+                      if (staleSince != null) ...[
+                        _StaleBanner(since: staleSince!, onRetry: onRetry),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       _BalanceHero(summary: s),
                       const SizedBox(height: AppSpacing.md),
-                      _BudgetCard(summary: s, onTap: onOpenBudgets),
+                      _BudgetCard(
+                        summary: s,
+                        onTap: onOpenBudgets,
+                        onSetBudget: onSetBudget,
+                      ),
                       const SizedBox(height: AppSpacing.huge),
                       _QuickAdd(onPick: onQuickAdd),
                       if (s.insight != null) ...[
                         const SizedBox(height: AppSpacing.huge),
                         _InsightCard(insight: s.insight!),
                       ],
+                      const SizedBox(height: AppSpacing.md),
+                      _AskCard(onTap: onOpenAssistant),
                       const SizedBox(height: AppSpacing.huge),
                       SectionHeading(
                         title: 'Where it went',
@@ -241,7 +273,7 @@ class _BalanceHero extends StatelessWidget {
 
     return GlassPanel(
       blurred: true,
-      radius: 26,
+      radius: AppRadius.hero,
       padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,10 +281,9 @@ class _BalanceHero extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              summary.availableBalance.format(),
+            child: AnimatedMoney(
+              value: summary.availableBalance,
               style: text.moneyXl.copyWith(color: g.text),
-              semanticsLabel: summary.availableBalance.semanticLabel(),
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -341,10 +372,15 @@ class _Flow extends StatelessWidget {
 }
 
 class _BudgetCard extends StatelessWidget {
-  const _BudgetCard({required this.summary, required this.onTap});
+  const _BudgetCard({
+    required this.summary,
+    required this.onTap,
+    required this.onSetBudget,
+  });
 
   final HomeSummary summary;
   final VoidCallback onTap;
+  final VoidCallback onSetBudget;
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +390,7 @@ class _BudgetCard extends StatelessWidget {
     if (budget == null) {
       return GlassPanel(
         blurred: true,
-        onTap: onTap,
+        onTap: onSetBudget,
         child: Row(
           children: [
             Expanded(
@@ -696,6 +732,111 @@ class _LoadingBody extends StatelessWidget {
         SizedBox(height: AppSpacing.huge),
         GlassSkeleton(height: 140),
       ],
+    );
+  }
+}
+
+class _StaleBanner extends StatelessWidget {
+  const _StaleBanner({required this.since, required this.onRetry});
+
+  final DateTime since;
+  final VoidCallback onRetry;
+
+  String get _ago {
+    final d = DateTime.now().difference(since);
+    if (d.inMinutes < 1) return 'just now';
+    if (d.inMinutes < 60) return '${d.inMinutes} min ago';
+    if (d.inHours < 24) return '${d.inHours} hr ago';
+    return '${d.inDays} days ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final g = context.glass;
+
+    return GlassPanel(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 17, color: g.textMuted),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Offline. Showing figures from $_ago.',
+              style: TextStyle(fontSize: 13, color: g.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, 32),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Retry', style: TextStyle(fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorBody extends StatelessWidget {
+  const _ErrorBody({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassEmpty(
+      icon: Icons.error_outline_rounded,
+      title: 'Could not load your dashboard',
+      body: message,
+      actionLabel: 'Try again',
+      onAction: onRetry,
+    );
+  }
+}
+
+/// Entry to the assistant. Sits directly under the insight, where a question
+/// about the figures is the natural next thought.
+class _AskCard extends StatelessWidget {
+  const _AskCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = context.glass;
+
+    return GlassPanel(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.lg,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome_outlined, size: 19, color: g.accent),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              'Ask about your money',
+              style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.15,
+                color: g.text,
+              ),
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, size: 20, color: g.textMuted),
+        ],
+      ),
     );
   }
 }

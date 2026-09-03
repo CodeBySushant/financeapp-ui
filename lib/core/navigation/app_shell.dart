@@ -121,7 +121,7 @@ class _FloatingBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final g = context.glass;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    final radius = BorderRadius.circular(26);
+    final radius = BorderRadius.circular(AppRadius.hero);
 
     Widget bar = ClipRRect(
       borderRadius: radius,
@@ -208,7 +208,7 @@ class _BarItem extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           child: AnimatedContainer(
             duration: AppMotion.of(context, AppMotion.fast),
             curve: AppMotion.emphasized,
@@ -217,7 +217,7 @@ class _BarItem extends StatelessWidget {
               vertical: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadius.control),
               color: selected
                   ? g.accent.withValues(alpha: g.isDark ? 0.20 : 0.12)
                   : Colors.transparent,
@@ -275,10 +275,10 @@ class _AddButton extends StatelessWidget {
               HapticFeedback.mediumImpact();
               onTap();
             },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.control),
             child: Ink(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadius.control),
                 color: g.accent,
               ),
               // The glow this used to carry was drawn inside the bar's own

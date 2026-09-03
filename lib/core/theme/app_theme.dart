@@ -81,7 +81,7 @@ abstract final class AppTheme {
             letterSpacing: -0.1,
           ),
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: AppRadius.button,
           ),
         ),
       ),
@@ -92,7 +92,7 @@ abstract final class AppTheme {
           minimumSize: const Size(0, 50),
           side: BorderSide(color: g.stroke),
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: AppRadius.button,
           ),
         ),
       ),
@@ -132,7 +132,7 @@ abstract final class AppTheme {
           fontSize: 14,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           side: BorderSide(color: g.stroke),
         ),
       ),
@@ -147,7 +147,7 @@ abstract final class AppTheme {
   }
 
   static OutlineInputBorder _field(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.control),
         borderSide: BorderSide(color: color),
       );
 }

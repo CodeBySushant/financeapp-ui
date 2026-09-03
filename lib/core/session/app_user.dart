@@ -1,72 +1,89 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 
 /// The signed-in person.
 ///
-/// This mirrors the `user` object the API returns from `POST /api/auth/login`
-/// and `GET /api/auth/me`, so when the network layer lands this class does not
-/// change — only where it is filled from does.
+/// Mirrors the `user` object returned by `POST /api/auth/login`. Note that
+/// `GET /api/auth/me` returns a narrower object with no `name`, so the name is
+/// carried forward from sign-in rather than refetched.
 @immutable
 class AppUser {
   const AppUser({
     required this.id,
-    required this.name,
-    this.email,
+    required this.email,
+    this.name,
     this.currency = 'INR',
+    this.timezone = 'Asia/Kolkata',
+    this.isPremium = false,
+    this.onboarded = false,
   });
 
   final String id;
-  final String name;
-  final String? email;
+  final String email;
+  final String? name;
   final String currency;
+  final String timezone;
+  final bool isPremium;
+  final bool onboarded;
 
-  /// What the greeting uses. A full name in a greeting reads like a form
-  /// letter, so only the first word is shown.
+  /// What the greeting uses. Falls back to the local part of the email so a
+  /// Google account without a name still greets someone.
   String get firstName {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return '';
-    final space = trimmed.indexOf(' ');
-    return space == -1 ? trimmed : trimmed.substring(0, space);
+    final n = name?.trim();
+    if (n != null && n.isNotEmpty) {
+      final space = n.indexOf(' ');
+      return space == -1 ? n : n.substring(0, space);
+    }
+    final local = email.split('@').first;
+    return local.isEmpty ? 'there' : local;
+  }
+
+  String get displayName {
+    final n = name?.trim();
+    return (n != null && n.isNotEmpty) ? n : email.split('@').first;
   }
 
   String get initial =>
-      name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase();
-
-  AppUser copyWith({String? name, String? email, String? currency}) => AppUser(
-        id: id,
-        name: name ?? this.name,
-        email: email ?? this.email,
-        currency: currency ?? this.currency,
-      );
+      displayName.isEmpty ? '?' : displayName.substring(0, 1).toUpperCase();
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'name': name,
         'email': email,
+        'name': name,
         'currency': currency,
+        'timezone': timezone,
+        'isPremium': isPremium,
+        'onboarded': onboarded,
       };
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
-        id: json['id'] as String? ?? 'local',
-        name: json['name'] as String? ?? '',
-        email: json['email'] as String?,
+        id: json['id'] as String? ?? '',
+        email: json['email'] as String? ?? '',
+        name: json['name'] as String?,
         currency: json['currency'] as String? ?? 'INR',
+        timezone: json['timezone'] as String? ?? 'Asia/Kolkata',
+        isPremium: json['isPremium'] as bool? ?? false,
+        onboarded: json['onboarded'] as bool? ?? false,
       );
 
-  String encode() => jsonEncode(toJson());
+  /// `/me` omits `name` and `onboarded`, so those are kept from what we already
+  /// hold rather than being wiped on every launch.
+  AppUser mergeFromMe(Map<String, dynamic> me) => AppUser(
+        id: me['id'] as String? ?? id,
+        email: me['email'] as String? ?? email,
+        name: name,
+        currency: me['currency'] as String? ?? currency,
+        timezone: me['timezone'] as String? ?? timezone,
+        isPremium: me['isPremium'] as bool? ?? isPremium,
+        onboarded: onboarded,
+      );
 
-  static AppUser? decode(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final map = jsonDecode(raw);
-      if (map is! Map<String, dynamic>) return null;
-      final user = AppUser.fromJson(map);
-      return user.name.trim().isEmpty ? null : user;
-    } catch (_) {
-      // A corrupt record is treated as no record. Better to ask the person
-      // their name again than to crash on launch.
-      return null;
-    }
-  }
+  AppUser copyWith({String? name}) => AppUser(
+        id: id,
+        email: email,
+        name: name ?? this.name,
+        currency: currency,
+        timezone: timezone,
+        isPremium: isPremium,
+        onboarded: onboarded,
+      );
 }

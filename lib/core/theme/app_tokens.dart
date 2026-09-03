@@ -16,23 +16,36 @@ abstract final class AppSpacing {
   static double gutter(double width) => width >= 905 ? xxxl : lg;
 }
 
-/// Radii. Fintrak is restrained here — `--radius: 0.5rem` with 16 reserved for
-/// outer cards. Nothing is a blob.
+/// Radii.
+///
+/// A scale, not a constant. Using one generous radius on everything from a
+/// full-width card to a 40px glyph is the flattest tell of a generated UI —
+/// the corner should stay in proportion to the shape it belongs to, so a big
+/// surface gets a slightly softer corner and a small control a tighter one.
+/// Chips keep a true pill because that is a different shape language, not a
+/// bigger version of the same one.
 abstract final class AppRadius {
-  static const double xs = 6;
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double control = 14;
+  static const double xs = 4;
+  static const double sm = 6;
+  static const double md = 8;
+  static const double control = 10;
+  static const double lg = 12;
+
+  /// The largest surfaces: the balance card, the nav bar.
+  static const double hero = 14;
+
+  /// Modal sheets, which meet the screen edge and want a softer meeting point.
+  static const double sheetTop = 18;
+
   static const double pill = 999;
 
   static const BorderRadius card = BorderRadius.all(Radius.circular(lg));
-  static const BorderRadius inner = BorderRadius.all(Radius.circular(md));
-  static const BorderRadius tile = BorderRadius.all(Radius.circular(sm));
+  static const BorderRadius inner = BorderRadius.all(Radius.circular(control));
+  static const BorderRadius tile = BorderRadius.all(Radius.circular(md));
   static const BorderRadius button = BorderRadius.all(Radius.circular(control));
   static const BorderRadius round = BorderRadius.all(Radius.circular(pill));
   static const BorderRadius sheet =
-      BorderRadius.vertical(top: Radius.circular(24));
+      BorderRadius.vertical(top: Radius.circular(sheetTop));
 }
 
 /// Motion, ported from the web easing `cubic-bezier(0.22, 1, 0.36, 1)`.

@@ -1,147 +1,176 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/glass.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/widgets/screen_header.dart';
-import '../../../dev/preview_extras.dart';
+import '../../budgets/application/budgets_provider.dart';
+import '../../budgets/domain/budget.dart';
 
-/// Where the money actually goes, and how each budget is holding up.
-class InsightsScreen extends StatelessWidget {
+/// Where the money went, and how each budget is holding up.
+class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final g = context.glass;
-    final budgets = PreviewExtras.budgets();
+    final async = ref.watch(budgetsProvider);
+    final board = async.valueOrNull;
 
-    var spentMinor = 0;
-    for (final b in budgets) {
-      spentMinor += b.spent.minor;
-    }
-    final spent = Money.fromMinor(spentMinor, 'INR');
-
+    // Only per-category lines belong in the ring; the whole-month budget covers
+    // the same spend and would double-count every slice.
     final segments = [
-      for (final b in budgets)
-        _Segment(
-          label: b.label,
-          value: b.spent,
-          color: g.categoryColor(b.categoryId),
-          categoryId: b.categoryId,
-        ),
-    ]..sort((a, b) => b.value.minor.compareTo(a.value.minor));
+      ...?board?.items.where((b) => b.label != 'Everything' && b.used.minor > 0),
+    ]..sort((a, b) => b.used.minor.compareTo(a.used.minor));
 
-    return CustomScrollView(
-      slivers: [
-        const SliverToBoxAdapter(
-          child: ScreenHeader(
-            title: 'Insights',
-            subtitle: 'This month at a glance',
+    final totalUsed =
+        segments.fold<int>(0, (sum, b) => sum + b.used.minor);
+
+    return RefreshIndicator(
+      onRefresh: () async => ref.invalidate(budgetsProvider),
+      backgroundColor: g.canvasBottom,
+      color: g.accent,
+      edgeOffset: 100,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: ScreenHeader(
+              title: 'Insights',
+              subtitle: board == null
+                  ? 'Loading…'
+                  : '${board.period} · ${board.daysRemaining} days left',
+            ),
           ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            140,
-          ),
-          sliver: SliverList.list(
-            children: [
-              GlassPanel(
-                blurred: true,
-                padding: const EdgeInsets.all(AppSpacing.xxl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // The ring is inset inside a square box rather than filling
-                    // it. Previously the stroke's outer edge landed exactly on
-                    // the bounding box, so the round caps and antialiasing were
-                    // clipped against it.
-                    Center(
-                      child: SizedBox(
-                        width: 168,
-                        height: 168,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CustomPaint(
-                              size: const Size.square(168),
-                              painter: _DonutPainter(
-                                segments: segments,
-                                totalMinor: spentMinor,
-                                track: g.strokeSoft,
-                              ),
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  spent.format(compact: true),
-                                  style: context.text.moneyLg.copyWith(
-                                    color: g.text,
-                                  ),
-                                ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  'spent',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    letterSpacing: -0.05,
-                                    color: g.textMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    // A legend of bare colour dots asks you to match hues back
-                    // to a chart. Giving each row its amount and share makes it
-                    // readable on its own and uses the card's width.
-                    for (var i = 0; i < segments.length; i++) ...[
-                      if (i > 0)
-                        Divider(height: 1, indent: 20, color: g.strokeSoft),
-                      _LegendRow(
-                        segment: segments[i],
-                        totalMinor: spentMinor,
-                      ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              0,
+              AppSpacing.xl,
+              150,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: switch (async) {
+                AsyncValue(hasError: true, :final error) => GlassEmpty(
+                    icon: Icons.cloud_off_rounded,
+                    title: 'Could not load your insights',
+                    body: error is ApiException
+                        ? error.message
+                        : 'Something went wrong.',
+                    actionLabel: 'Try again',
+                    onAction: () => ref.invalidate(budgetsProvider),
+                  ),
+                AsyncValue(isLoading: true) => const Column(
+                    children: [
+                      GlassSkeleton(height: 300),
+                      SizedBox(height: AppSpacing.lg),
+                      GlassSkeleton(height: 96),
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              const SectionHeading(title: 'Budgets'),
-              for (final b in budgets)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: _BudgetRow(budget: b),
-                ),
-            ],
+                  ),
+                _ => board == null || board.items.isEmpty
+                    ? const GlassEmpty(
+                        icon: Icons.pie_chart_outline_rounded,
+                        title: 'No budgets yet',
+                        body:
+                            'Set a monthly budget and this fills in as you spend.',
+                      )
+                    : Column(
+                        children: [
+                          if (segments.isNotEmpty) ...[
+                            _BreakdownCard(
+                              segments: segments,
+                              totalUsed: totalUsed,
+                            ),
+                            const SizedBox(height: AppSpacing.huge),
+                          ],
+                          const SectionHeading(title: 'Budgets'),
+                          for (final b in board.items)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: AppSpacing.md),
+                              child: _BudgetRow(budget: b),
+                            ),
+                        ],
+                      ),
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _Segment {
-  const _Segment({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.categoryId,
-  });
+class _BreakdownCard extends StatelessWidget {
+  const _BreakdownCard({required this.segments, required this.totalUsed});
 
-  final String label;
-  final Money value;
-  final Color color;
-  final String categoryId;
+  final List<BudgetLine> segments;
+  final int totalUsed;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = context.glass;
+
+    return GlassPanel(
+      blurred: true,
+      padding: const EdgeInsets.all(AppSpacing.xxl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // The ring is inset inside its box: an arc whose outer edge sits
+          // exactly on the bounding box gets its round caps shaved by
+          // antialiasing.
+          Center(
+            child: SizedBox(
+              width: 168,
+              height: 168,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: const Size.square(168),
+                    painter: _DonutPainter(
+                      segments: segments,
+                      totalMinor: totalUsed,
+                      track: g.strokeSoft,
+                      colorOf: g.categoryColor,
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        Money.fromMinor(
+                          totalUsed,
+                          segments.first.used.currency,
+                        ).format(compact: true),
+                        style: context.text.moneyLg.copyWith(color: g.text),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        'spent',
+                        style: TextStyle(fontSize: 12, color: g.textMuted),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+          for (var i = 0; i < segments.length; i++) ...[
+            if (i > 0) Divider(height: 1, indent: 20, color: g.strokeSoft),
+            _LegendRow(line: segments[i], totalMinor: totalUsed),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _DonutPainter extends CustomPainter {
@@ -149,26 +178,25 @@ class _DonutPainter extends CustomPainter {
     required this.segments,
     required this.totalMinor,
     required this.track,
+    required this.colorOf,
   });
 
-  final List<_Segment> segments;
+  final List<BudgetLine> segments;
   final int totalMinor;
 
   /// Passed in: a CustomPainter has no BuildContext to read the palette from.
   final Color track;
+  final Color Function(String?) colorOf;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (totalMinor <= 0) return;
 
     const stroke = 18.0;
-    const gap = 0.045; // radians of breathing room between arcs
-    // One extra pixel of inset: with round caps, an arc whose outer edge sits
-    // exactly on the bounding box gets shaved by antialiasing.
+    const gap = 0.045;
     const inset = 1.0;
     final centre = Offset(size.width / 2, size.height / 2);
-    final radius =
-        (math.min(size.width, size.height) - stroke) / 2 - inset;
+    final radius = (math.min(size.width, size.height) - stroke) / 2 - inset;
     final rect = Rect.fromCircle(center: centre, radius: radius);
 
     canvas.drawCircle(
@@ -182,7 +210,7 @@ class _DonutPainter extends CustomPainter {
 
     var start = -math.pi / 2;
     for (final s in segments) {
-      final sweep = (s.value.minor / totalMinor) * math.pi * 2;
+      final sweep = (s.used.minor / totalMinor) * math.pi * 2;
       if (sweep <= gap) {
         start += sweep;
         continue;
@@ -196,7 +224,7 @@ class _DonutPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = stroke
           ..strokeCap = StrokeCap.round
-          ..color = s.color,
+          ..color = colorOf(s.categorySlug),
       );
       start += sweep;
     }
@@ -209,77 +237,17 @@ class _DonutPainter extends CustomPainter {
       old.track != track;
 }
 
-class _BudgetRow extends StatelessWidget {
-  const _BudgetRow({required this.budget});
-
-  final PreviewBudget budget;
-
-  @override
-  Widget build(BuildContext context) {
-    final g = context.glass;
-    final over = budget.spent > budget.limit;
-    final tone = g.budgetTone(budget.fraction);
-
-    return GlassPanel(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              CategoryGlyph(categoryId: budget.categoryId, size: 36),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  budget.label,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w500,
-                    color: g.text,
-                  ),
-                ),
-              ),
-              Text(
-                '${budget.spent.format(compact: true)} / ${budget.limit.format(compact: true)}',
-                style: context.text.numMeta.copyWith(
-                  fontSize: 12.5,
-                  color: g.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          GlassBar(fraction: budget.fraction, tone: tone, height: 6),
-          const SizedBox(height: AppSpacing.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              over
-                  ? 'Over by ${(budget.spent - budget.limit).format()}'
-                  : '${budget.remaining.format()} left',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: over ? FontWeight.w600 : FontWeight.w400,
-                color: over ? g.danger : g.textMuted,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _LegendRow extends StatelessWidget {
-  const _LegendRow({required this.segment, required this.totalMinor});
+  const _LegendRow({required this.line, required this.totalMinor});
 
-  final _Segment segment;
+  final BudgetLine line;
   final int totalMinor;
 
   @override
   Widget build(BuildContext context) {
     final g = context.glass;
     final share =
-        totalMinor <= 0 ? 0 : (segment.value.minor / totalMinor * 100).round();
+        totalMinor <= 0 ? 0 : (line.used.minor / totalMinor * 100).round();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -290,13 +258,13 @@ class _LegendRow extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: segment.color,
+              color: g.categoryColor(line.categorySlug),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
-              segment.label,
+              line.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -306,14 +274,70 @@ class _LegendRow extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            '$share%',
-            style: TextStyle(fontSize: 13, color: g.textMuted),
-          ),
+          Text('$share%', style: TextStyle(fontSize: 13, color: g.textMuted)),
           const SizedBox(width: AppSpacing.lg),
           Text(
-            segment.value.format(),
+            line.used.format(),
             style: context.text.moneyMd.copyWith(color: g.text),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BudgetRow extends StatelessWidget {
+  const _BudgetRow({required this.budget});
+
+  final BudgetLine budget;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = context.glass;
+    final tone = budget.isExceeded ? g.danger : g.textSecondary;
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CategoryGlyph(categoryId: budget.categorySlug, size: 36),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  budget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.15,
+                    color: g.text,
+                  ),
+                ),
+              ),
+              Text(
+                '${budget.used.format(compact: true)} / ${budget.limit.format(compact: true)}',
+                style: context.text.numMeta.copyWith(color: g.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          GlassBar(fraction: budget.fraction, tone: tone, height: 5),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              budget.isExceeded
+                  ? 'Over by ${(budget.used - budget.limit).format()}'
+                  : '${budget.remaining.format()} left',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: budget.isExceeded ? FontWeight.w600 : FontWeight.w400,
+                color: budget.isExceeded ? g.danger : g.textMuted,
+              ),
+            ),
           ),
         ],
       ),

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 9+ blocks cleartext HTTP by default, which is why a dev API on
+  http://... fails with no useful error.
+
+  This permits cleartext for local development hosts only. Everything else,
+  including production, stays HTTPS-only. Run the app with
+
+      adb reverse tcp:4000 tcp:4000
+
+  so the phone can reach your machine's API on localhost, and no LAN IP has to
+  be listed here or baked into a build.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <!-- Android emulator's alias for the host machine. -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

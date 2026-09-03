@@ -342,7 +342,7 @@ class GlassPanel extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.xl),
-    this.radius = 22,
+    this.radius = AppRadius.lg,
     this.blurred = false,
     this.tint,
     this.elevated = true,
@@ -559,7 +559,7 @@ class CategoryGlyph extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.30),
+        borderRadius: BorderRadius.circular(size * 0.24),
         color: g.isDark
             ? Colors.white.withValues(alpha: 0.07)
             : Colors.white.withValues(alpha: 0.70),
@@ -786,7 +786,7 @@ class GlassSkeleton extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: AppRadius.card,
         color: g.surfaceLow,
         border: Border.all(color: g.stroke),
       ),

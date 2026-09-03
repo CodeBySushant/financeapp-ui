@@ -13,6 +13,16 @@ dependencies:
   intl: ^0.19.0
   shared_preferences: ^2.3.0
 
+  # Networking + state. dio and riverpod are pure Dart; only secure_storage
+  # adds a platform plugin, which keeps the Android build surface small.
+  dio: ^5.7.0
+  flutter_riverpod: ^2.6.1
+  flutter_secure_storage: ^9.2.2
+
+  # Device unlock for the app lock. Requires MainActivity to extend
+  # FlutterFragmentActivity — see android/app/src/main/kotlin/.../MainActivity.kt
+  local_auth: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
