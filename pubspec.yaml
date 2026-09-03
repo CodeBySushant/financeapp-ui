@@ -1,0 +1,47 @@
+name: fintrak
+description: Personal finance companion. Track, understand, decide.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+  shared_preferences: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Before release, bundle the three faces instead of fetching them at runtime.
+  # A serif headline snapping in on a cold start over a bad connection is
+  # exactly the detail that makes an app feel cheap.
+  #
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Inter-SemiBold.ttf
+  #         weight: 600
+  #   - family: Fraunces
+  #     fonts:
+  #       - asset: assets/fonts/Fraunces-Regular.ttf
+  #       - asset: assets/fonts/Fraunces-Medium.ttf
+  #         weight: 500
+  #   - family: JetBrainsMono
+  #     fonts:
+  #       - asset: assets/fonts/JetBrainsMono-Regular.ttf
+  #       - asset: assets/fonts/JetBrainsMono-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/JetBrainsMono-SemiBold.ttf
+  #         weight: 600
